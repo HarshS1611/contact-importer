@@ -51,7 +51,6 @@ export function useFirestore<T>(collectionName: string) {
   const add = (item: Omit<T, 'id'>, entityName?: string) => {
     const addPromise = addDoc(collection(db, collectionName), {
       ...item,
-      createdAt: serverTimestamp()
     }).then(docRef => docRef.id);
 
     return toast.promise(addPromise, {
@@ -65,7 +64,6 @@ export function useFirestore<T>(collectionName: string) {
   const addWithCustomId = (id: string, item: Omit<T, 'id'>, entityName?: string) => {
     const addPromise = setDoc(doc(db, collectionName, id), {
       ...item,
-      createdAt: serverTimestamp()
     }).then(() => id);
 
     return toast.promise(addPromise, {
@@ -122,14 +120,12 @@ export function useFirestore<T>(collectionName: string) {
           case 'add':
             batch.set(docRef, {
               ...op.data,
-              createdAt: serverTimestamp()
             });
             results.push(docRef.id);
             break;
           case 'update':
             batch.update(docRef, {
               ...op.data,
-              updatedAt: serverTimestamp()
             });
             break;
           case 'delete':

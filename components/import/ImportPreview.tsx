@@ -162,94 +162,94 @@ export function ImportPreview({
     return (
       <div>
         <div className='max-h-[70vh] overflow-y-auto'>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          <div className="text-start">
-            <h3 className="text-xl font-semibold text-[#0E4259] mb-2">Final Checks Complete</h3>
-            <p className="text-[#68818C]">
-              {hasErrors
-                ? 'Found some issues that need attention.'
-                : 'No duplicates or errors found — your data is clean and ready to import.'}
-            </p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="text-start">
+              <h3 className="text-xl font-semibold text-[#0E4259] mb-2">Final Checks Complete</h3>
+              <p className="text-[#68818C]">
+                {hasErrors
+                  ? 'Found some issues that need attention.'
+                  : 'No duplicates or errors found — your data is clean and ready to import.'}
+              </p>
+            </div>
 
-          <div className="flex justify-center bg-[url('/images/import/upload/processing.svg')] bg-center bg-cover bg-no-repeat rounded-full w-100 h-60 mx-auto">
-            <Image
-              src="/images/import/map/finalChecking.svg"
-              alt="sparkle"
-              width={160}
-              height={160}
-              className=""
-            />
-          </div>
+            <div className="flex justify-center bg-[url('/images/import/upload/processing.svg')] bg-center bg-cover bg-no-repeat rounded-full w-100 h-60 mx-auto">
+              <Image
+                src="/images/import/map/finalChecks.svg"
+                alt="sparkle"
+                width={160}
+                height={160}
+                className=""
+              />
+            </div>
 
-          <div className='text-center'>
-            {hasErrors ? <ul className="text-sm text-red-700 space-y-1">
-                  {errors.slice(0, 5).map((error, index) => (
-                    <li key={index}>• {error}</li>
-                  ))}
-                  {errors.length > 5 && (
-                    <li className="text-red-600 italic">
-                      ... and {errors.length - 5} more
-                    </li>
-                  )}
-                </ul> : <p className='text-xl text-[#0E4259]'>No Issue Founds! This Database entres are good to move to contacts section.</p>}
+            <div className='text-center'>
+              {hasErrors ? <ul className="text-sm text-red-700 space-y-1">
+                {errors.slice(0, 5).map((error, index) => (
+                  <li key={index}>• {error}</li>
+                ))}
+                {errors.length > 5 && (
+                  <li className="text-red-600 italic">
+                    ... and {errors.length - 5} more
+                  </li>
+                )}
+              </ul> : <p className='text-xl text-[#0E4259]'>No Issue Founds! This Database entres are good to move to contacts section.</p>}
 
-          </div>
-          {/* Results Preview Cards */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="bg-green-50 border-0">
-              <CardContent className="px-2 text-center">
-                <div className="text-xs text-green-600 font-medium mb-2">Total Contacts Created</div>
-                <div className="text-4xl font-bold text-green-600">{willCreate.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-orange-50 border-0">
-              <CardContent className="px-2 text-center">
-                <div className="text-xs text-orange-600 font-medium mb-2">Contacts Merged</div>
-                <div className="text-4xl font-bold text-orange-600">{willMerge.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-blue-50 border-0">
-              <CardContent className="px-2 text-center">
-                <div className="text-xs text-blue-600 font-medium mb-2">Skipped</div>
-                <div className="text-4xl font-bold text-blue-600">{willSkip.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-red-50 border-0">
-              <CardContent className="px-2 text-center">
-                <div className="text-xs text-red-600 font-medium mb-2">Errors</div>
-                <div className="text-4xl font-bold text-red-600">{errors.length}</div>
-              </CardContent>
-            </Card>
-          </div>
+            </div>
+            {/* Results Preview Cards */}
+            <div className="grid grid-cols-4 gap-4">
+              <Card className="bg-green-50 border-0">
+                <CardContent className="px-2 text-center">
+                  <div className="text-xs text-green-600 font-medium mb-2">Total Contacts Created</div>
+                  <div className="text-4xl font-bold text-green-600">{willCreate.length}</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-orange-50 border-0">
+                <CardContent className="px-2 text-center">
+                  <div className="text-xs text-orange-600 font-medium mb-2">Contacts Merged</div>
+                  <div className="text-4xl font-bold text-orange-600">{willMerge.length}</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-50 border-0">
+                <CardContent className="px-2 text-center">
+                  <div className="text-xs text-blue-600 font-medium mb-2">Skipped</div>
+                  <div className="text-4xl font-bold text-blue-600">{willSkip.length}</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-red-50 border-0">
+                <CardContent className="px-2 text-center">
+                  <div className="text-xs text-red-600 font-medium mb-2">Errors</div>
+                  <div className="text-4xl font-bold text-red-600">{errors.length}</div>
+                </CardContent>
+              </Card>
+            </div>
 
-       
-        </motion.div>
+
+          </motion.div>
         </div>
-           {/* Navigation */}
-           <div className="flex justify-between pt-6">
-            <Button variant="outline" onClick={onPrevious} disabled={isImporting}>
-              Previous
-            </Button>
-            <Button
-              onClick={handleActualImport}
-              disabled={isImporting || (willCreate.length === 0 && willMerge.length === 0)}
-              size="lg"
-            >
-              {isImporting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                'Move to Contacts'
-              )}
-            </Button>
-          </div>
+        {/* Navigation */}
+        <div className="flex justify-between pt-6">
+          <Button variant="outline" onClick={onPrevious} disabled={isImporting}>
+            Previous
+          </Button>
+          <Button
+            onClick={handleActualImport}
+            disabled={isImporting || (willCreate.length === 0 && willMerge.length === 0)}
+            size="lg"
+          >
+            {isImporting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Importing...
+              </>
+            ) : (
+              'Move to Contacts'
+            )}
+          </Button>
+        </div>
       </div>
     )
   }
@@ -270,19 +270,15 @@ export function ImportPreview({
         </p>
       </div>
       <div className="flex justify-center mb-8">
-        <motion.div
-          animate={{
-            rotate: 360,
-            scale: [1, 1.1, 1]
-          }}
-          transition={{
-            rotate: { duration: 2, repeat: Infinity, ease: "linear" },
-            scale: { duration: 1.5, repeat: Infinity }
-          }}
-          className="p-6 bg-primary/10 rounded-full"
-        >
-          <CheckCircle className="h-16 w-16 text-primary" />
-        </motion.div>
+        <div className="flex justify-center bg-[url('/images/import/upload/processing.svg')] bg-center bg-cover bg-no-repeat rounded-full w-100 h-60 mx-auto">
+          <Image
+            src="/images/import/map/finalChecking.svg"
+            alt="sparkle"
+            width={160}
+            height={160}
+            className=""
+          />
+        </div>
       </div>
       <div className="space-y-4">
         <div className="text-lg font-semibold text-[#5883C9]">
