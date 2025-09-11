@@ -97,7 +97,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
         
         const invalidEmails = sampleAgentEmails.filter(email => !userLookup[email])
         if (invalidEmails.length > 0) {
-          errors.push(`Agent emails not found in users: ${invalidEmails.join(', ')}${invalidEmails.length > 3 ? '...' : ''}`)
+          toast.info(`Agent emails not found in users: ${invalidEmails.join(', ')}${invalidEmails.length > 3 ? '...' : ''}`)
         }
       }
     }
@@ -113,7 +113,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
   }
 
   const handleFieldsDetected = (fields: DetectedField[]) => {
-    console.log('Fields detected:', fields.length, 'fields')
+    console.log('Fields detected:', fields, 'fields')
     setDetectedFields(fields)
     setCurrentStep('mapping')
   }
@@ -126,11 +126,6 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
     
     if (!validation.valid) {
       validation.errors.forEach(error => toast.error(error))
-      return
-    }
-
-    if (Object.keys(fieldMappings).length === 0) {
-      toast.error('Please map at least one field before continuing')
       return
     }
 

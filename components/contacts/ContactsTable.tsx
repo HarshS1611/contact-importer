@@ -112,13 +112,11 @@ export function ContactsTable() {
   const handleDeleteSelected = async () => {
     if (confirm(`Are you sure you want to delete ${selectedContacts.length} contacts?`)) {
       try {
-        toast.loading(`Deleting ${selectedContacts.length} contacts...`)
         await Promise.all(selectedContacts.map(id => remove(id)))
         setSelectedContacts([])
         toast.success(`Successfully deleted ${selectedContacts.length} contacts`)
       } catch (error) {
         console.error('Error deleting contacts:', error)
-        toast.error('Failed to delete contacts. Please try again.')
       }
     }
   }
@@ -126,19 +124,15 @@ export function ContactsTable() {
   const handleDeleteSingle = async (contactId: string, contactName: string) => {
     if (confirm(`Are you sure you want to delete "${contactName}"?`)) {
       try {
-        toast.loading(`Deleting ${contactName}...`)
         await remove(contactId)
-        toast.success(`Successfully deleted ${contactName}`)
       } catch (error) {
         console.error('Error deleting contact:', error)
-        toast.error('Failed to delete contact. Please try again.')
       }
     }
   }
 
   const exportContacts = () => {
     try {
-      toast.loading('Preparing export...')
       
       const csvContent = [
         // Headers
@@ -166,10 +160,8 @@ export function ContactsTable() {
       a.click()
       URL.revokeObjectURL(url)
 
-      toast.success(`Successfully exported ${filteredContacts.length} contacts`)
     } catch (error) {
       console.error('Export failed:', error)
-      toast.error('Failed to export contacts. Please try again.')
     }
   }
 
@@ -480,7 +472,6 @@ export function ContactsTable() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentContacts.map((contact) => {
-                      console.log('Rendering contact:', contact)
                       const isSelected = selectedContacts.includes(contact.id)
                       const contactName = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Unknown'
                       

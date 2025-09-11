@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ImportResult, FileData } from '@/lib/types'
-import { CheckCircle, AlertTriangle, Users, UserPlus, RefreshCw, X } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Users, UserPlus, RefreshCw, X, SkipBack, SkipForward } from 'lucide-react'
 
 interface ImportResultsProps {
   results: ImportResult
@@ -72,7 +72,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
 
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="p-6 text-center">
-            <X className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+            <SkipForward className="h-8 w-8 text-orange-600 mx-auto mb-2" />
             <div className="text-3xl font-bold text-orange-800">
               {results.skipped}
             </div>
@@ -122,10 +122,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
                 {successRate}%
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Deduplication:</span>
-              <span className="font-semibold text-blue-600">Merge Mode</span>
-            </div>
+            
           </div>
         </CardContent>
       </Card>
