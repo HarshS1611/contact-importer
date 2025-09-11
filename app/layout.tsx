@@ -1,16 +1,15 @@
-// app/layout.tsx
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+// app/layout.tsx - Updated Root Layout with Authentication
 import './globals.css'
-
-import { Sidebar } from '@/components/global/Sidebar'
+import { Inter } from 'next/font/google'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { AuthGuard } from '@/components/auth'
 import { Toaster } from '@/components/ui/sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: 'Contact Importer Pro',
-  description: 'Smart contact import system with field mapping',
+export const metadata = {
+  title: 'Contact Importer Dashboard',
+  description: 'Smart CSV/Excel contact import with auto-mapping and deduplication',
 }
 
 export default function RootLayout({
@@ -21,20 +20,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="relative flex  min-h-screen bg-background">
-          <Sidebar />
-          <main className="lg:pl-72 flex-1" >
+        <AuthProvider>
+          <AuthGuard>
             {children}
-          </main>
-        </div>
-        <Toaster
+          </AuthGuard>
+        </AuthProvider>
+        
+        <Toaster 
           position="top-right"
           richColors
           closeButton
           expand
           visibleToasts={5}
-        />     
-         </body>
+        />
+      </body>
     </html>
   )
 }

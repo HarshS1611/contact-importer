@@ -61,7 +61,7 @@ export function ContactsTable() {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(25)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   // Create user lookup map for agent resolution
   const userLookup = useMemo(() => {
@@ -610,15 +610,11 @@ export function ContactsTable() {
                           {/* Actions */}
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex gap-2">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                            
                               <Button 
                                 variant="ghost" 
                                 size="sm"
+                                className='bg-red-50 hover:bg-red-100'
                                 onClick={() => handleDeleteSingle(contact)}
                               >
                                 <Trash2 className="h-4 w-4 text-red-500" />

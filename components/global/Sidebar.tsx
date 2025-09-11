@@ -1,14 +1,17 @@
-// components/layout/Sidebar.tsx - Navigation Sidebar
+// components/layout/Sidebar.tsx - Updated with Authentication
 'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ImportModal } from '@/components/import/ImportModal'
 import { useContacts, useUsers, useContactFields } from '@/hooks/useFirestore'
+import { useAuth } from '@/contexts/AuthContext'
+import { logOut } from '@/lib/auth'
+import { toast } from 'sonner'
 import { 
   Home,
   Users, 
@@ -16,10 +19,11 @@ import {
   Settings,
   Upload,
   Database,
-  BarChart3,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  LogOut,
+  User
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -70,7 +74,10 @@ function NavItem({ href, icon: Icon, label, badge, isActive }: NavItemProps) {
 export function Sidebar() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { user } = useAuth()
 
   // Get data for badge counts
   const { data: contacts } = useContacts()
@@ -100,9 +107,30 @@ export function Sidebar() {
       href: '/fields',
       icon: Settings,
       label: 'Contact Fields',
-      badge: contactFields.length
+      badge: contactFields.filter(f => !f.core).length // Only custom fields
     }
   ]
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    
+    try {
+      const { error } = await logOut()
+      
+      if (error) {
+        toast.error(error)
+        setIsLoggingOut(false)
+        return
+      }
+      
+      toast.success('Signed out successfully')
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Failed to sign out')
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <>
@@ -119,7 +147,7 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed  inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 lg:inset-0",
+        "fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 lg:static lg:inset-0",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
@@ -133,6 +161,25 @@ export function Sidebar() {
               <p className="text-sm text-gray-500">Smart CRM Integration</p>
             </div>
           </div>
+
+          {/* User Info */}
+          {user && (
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <User className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user.displayName || 'User'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Import Button */}
           <div className="px-6 py-6">
@@ -160,7 +207,34 @@ export function Sidebar() {
             ))}
           </nav>
 
-      
+          {/* Footer */}
+          <div className="px-6 py-6 border-t border-gray-200 space-y-4">
+            {/* System Status */}
+            <div className="text-xs text-gray-500 space-y-2">
+              <div className="flex items-center justify-between">
+                <span>Version</span>
+                <span className="font-medium">1.0.0</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Status</span>
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <span className="font-medium text-green-600">Online</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="w-full flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
+            </Button>
+          </div>
         </div>
       </div>
 
