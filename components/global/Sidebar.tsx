@@ -119,7 +119,7 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 lg:static lg:inset-0",
+        "fixed  inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 lg:inset-0",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
@@ -160,22 +160,7 @@ export function Sidebar() {
             ))}
           </nav>
 
-          {/* Footer */}
-          <div className="px-6 py-6 border-t border-gray-200">
-            <div className="text-xs text-gray-500 space-y-2">
-              <div className="flex items-center justify-between">
-                <span>Version</span>
-                <span className="font-medium">1.0.0</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Status</span>
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <span className="font-medium text-green-600">Online</span>
-                </div>
-              </div>
-            </div>
-          </div>
+      
         </div>
       </div>
 

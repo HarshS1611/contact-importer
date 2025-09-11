@@ -51,7 +51,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
       {/* Results Summary Cards */}
       <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
         <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-6 text-center">
+          <CardContent className="px-6 text-center">
             <UserPlus className="h-8 w-8 text-green-600 mx-auto mb-2" />
             <div className="text-3xl font-bold text-green-800">
               {results.created}
@@ -61,7 +61,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
         </Card>
 
         <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="p-6 text-center">
+          <CardContent className="px-6 text-center">
             <RefreshCw className="h-8 w-8 text-blue-600 mx-auto mb-2" />
             <div className="text-3xl font-bold text-blue-800">
               {results.updated}
@@ -71,7 +71,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
         </Card>
 
         <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-6 text-center">
+          <CardContent className="px-6 text-center">
             <SkipForward className="h-8 w-8 text-orange-600 mx-auto mb-2" />
             <div className="text-3xl font-bold text-orange-800">
               {results.skipped}
@@ -84,7 +84,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
       {/* Error Details */}
       {hasErrors && (
         <Card className="border-red-200 bg-red-50 max-w-lg mx-auto">
-          <CardContent className="p-4">
+          <CardContent className="px-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <span className="font-semibold text-red-800">Issues Found</span>
@@ -104,10 +104,10 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
       )}
 
       {/* Import Summary */}
-      <Card className="max-w-md mx-auto">
-        <CardContent className="p-6">
+      <Card className="max-w-lg mx-auto">
+        <CardContent className="px-6">
           <h4 className="font-semibold mb-4">Import Summary</h4>
-          <div className="space-y-3 text-sm">
+          <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">File Processed:</span>
               <span className="font-semibold">{fileData.fileName}</span>
@@ -130,7 +130,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
       {/* Success Message */}
       {!hasErrors && (
         <Card className="border-green-200 bg-green-50 max-w-lg mx-auto">
-          <CardContent className="p-4 text-center">
+          <CardContent className="px-4 text-center">
             <div className="text-green-800">
               <p className="font-semibold mb-1">All contacts imported successfully!</p>
               <p className="text-sm">
@@ -142,7 +142,7 @@ export function ImportResults({ results, fileData, onClose }: ImportResultsProps
       )}
 
       {/* Close Button */}
-      <div className="flex justify-center pt-6">
+      <div className="flex justify-center">
         <Button size="lg" onClick={onClose} className="min-w-[200px]">
           <Users className="h-4 w-4 mr-2" />
           View Contacts

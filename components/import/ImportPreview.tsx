@@ -10,6 +10,7 @@ import { FileData, FieldMapping, ImportResult } from '@/lib/types'
 import { FieldMappingEngine } from '@/lib/fieldMapping'
 import { useContacts, useUsers, useContactFields } from '@/hooks/useFirestore'
 import { CheckCircle, AlertTriangle, Shield, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 
 interface ImportPreviewProps {
   fileData: FileData
@@ -159,121 +160,97 @@ export function ImportPreview({
     const { willCreate, willMerge, willSkip, errors } = previewSummary
     const hasErrors = errors.length > 0
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
-        <div className="text-center">
-          <h3 className="text-xl font-semibold mb-2">Final Checks Complete</h3>
-          <p className="text-muted-foreground">
-            {hasErrors
-              ? 'Found some issues that need attention.'
-              : 'No duplicates or errors found — your data is clean and ready to import.'}
-          </p>
+      <div>
+        <div className='max-h-[70vh] overflow-y-auto'>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <div className="text-start">
+            <h3 className="text-xl font-semibold text-[#0E4259] mb-2">Final Checks Complete</h3>
+            <p className="text-[#68818C]">
+              {hasErrors
+                ? 'Found some issues that need attention.'
+                : 'No duplicates or errors found — your data is clean and ready to import.'}
+            </p>
+          </div>
+
+          <div className="flex justify-center bg-[url('/images/import/upload/processing.svg')] bg-center bg-cover bg-no-repeat rounded-full w-100 h-60 mx-auto">
+            <Image
+              src="/images/import/map/finalChecking.svg"
+              alt="sparkle"
+              width={160}
+              height={160}
+              className=""
+            />
+          </div>
+
+          <div className='text-center'>
+            {hasErrors ? <ul className="text-sm text-red-700 space-y-1">
+                  {errors.slice(0, 5).map((error, index) => (
+                    <li key={index}>• {error}</li>
+                  ))}
+                  {errors.length > 5 && (
+                    <li className="text-red-600 italic">
+                      ... and {errors.length - 5} more
+                    </li>
+                  )}
+                </ul> : <p className='text-xl text-[#0E4259]'>No Issue Founds! This Database entres are good to move to contacts section.</p>}
+
+          </div>
+          {/* Results Preview Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            <Card className="bg-green-50 border-0">
+              <CardContent className="px-2 text-center">
+                <div className="text-xs text-green-600 font-medium mb-2">Total Contacts Created</div>
+                <div className="text-4xl font-bold text-green-600">{willCreate.length}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-50 border-0">
+              <CardContent className="px-2 text-center">
+                <div className="text-xs text-orange-600 font-medium mb-2">Contacts Merged</div>
+                <div className="text-4xl font-bold text-orange-600">{willMerge.length}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-0">
+              <CardContent className="px-2 text-center">
+                <div className="text-xs text-blue-600 font-medium mb-2">Skipped</div>
+                <div className="text-4xl font-bold text-blue-600">{willSkip.length}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-red-50 border-0">
+              <CardContent className="px-2 text-center">
+                <div className="text-xs text-red-600 font-medium mb-2">Errors</div>
+                <div className="text-4xl font-bold text-red-600">{errors.length}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+       
+        </motion.div>
         </div>
-
-        {/* Results Preview Cards */}
-        <div className="grid grid-cols-3 gap-6">
-          <Card className="bg-green-50 border-0">
-            <CardContent className="p-6 text-center">
-              <div className="text-xs text-green-600 font-medium mb-2">Total Contacts Created</div>
-              <div className="text-4xl font-bold text-green-600">{willCreate.length}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-orange-50 border-0">
-            <CardContent className="p-6 text-center">
-              <div className="text-xs text-orange-600 font-medium mb-2">Contacts Merged</div>
-              <div className="text-4xl font-bold text-orange-600">{willMerge.length}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-blue-50 border-0">
-            <CardContent className="p-6 text-center">
-              <div className="text-xs text-blue-600 font-medium mb-2">Skipped</div>
-              <div className="text-4xl font-bold text-blue-600">{willSkip.length}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-red-50 border-0">
-            <CardContent className="p-6 text-center">
-              <div className="text-xs text-red-600 font-medium mb-2">Errors</div>
-              <div className="text-4xl font-bold text-red-600">{errors.length}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Error Details */}
-        {hasErrors && (
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <span className="font-semibold text-red-800">Issues Found</span>
-              </div>
-              <ul className="text-sm text-red-700 space-y-1">
-                {errors.slice(0, 5).map((error, index) => (
-                  <li key={index}>• {error}</li>
-                ))}
-                {errors.length > 5 && (
-                  <li className="text-red-600 italic">
-                    ... and {errors.length - 5} more
-                  </li>
-                )}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Merged Details */}
-        {willMerge.length > 0 && (
-          <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="h-4 w-4 text-orange-600" />
-                <span className="font-semibold text-orange-800">Contacts will be merged</span>
-              </div>
-              <div className="text-sm text-orange-700">
-                These contacts already exist and will be merged. New info will be saved.
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Skipped Details */}
-        {willSkip.length > 0 && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-4 w-4 text-blue-600" />
-                <span className="font-semibold text-blue-800">Contacts will be skipped (identical or blank)</span>
-              </div>
-              <div className="text-sm text-blue-700">
-                {willSkip.length} contacts in the file are unchanged or blank and will not be imported.
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Navigation */}
-        <div className="flex justify-between pt-6">
-          <Button variant="outline" onClick={onPrevious} disabled={isImporting}>
-            Previous
-          </Button>
-          <Button
-            onClick={handleActualImport}
-            disabled={isImporting || (willCreate.length === 0 && willMerge.length === 0)}
-            size="lg"
-          >
-            {isImporting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Importing...
-              </>
-            ) : (
-              'Move to Contacts'
-            )}
-          </Button>
-        </div>
-      </motion.div>
+           {/* Navigation */}
+           <div className="flex justify-between pt-6">
+            <Button variant="outline" onClick={onPrevious} disabled={isImporting}>
+              Previous
+            </Button>
+            <Button
+              onClick={handleActualImport}
+              disabled={isImporting || (willCreate.length === 0 && willMerge.length === 0)}
+              size="lg"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                'Move to Contacts'
+              )}
+            </Button>
+          </div>
+      </div>
     )
   }
 
@@ -284,11 +261,11 @@ export function ImportPreview({
       animate={{ opacity: 1, y: 0 }}
       className="text-center space-y-8"
     >
-      <div>
-        <h3 className="text-xl font-semibold mb-2">
+      <div className='text-start'>
+        <h3 className="text-xl font-semibold text-[#0E4259] mb-2">
           Checking for Duplicates & Errors...
         </h3>
-        <p className="text-muted-foreground">
+        <p className="text-[#68818C]">
           Reviewing the entry data to ensure no duplicate contacts or invalid data slip through.
         </p>
       </div>
@@ -308,21 +285,21 @@ export function ImportPreview({
         </motion.div>
       </div>
       <div className="space-y-4">
-        <div className="text-lg font-semibold text-primary">
+        <div className="text-lg font-semibold text-[#5883C9]">
           Running Final Checks...
         </div>
-        <p className="text-muted-foreground max-w-md mx-auto">
+        <p className="text-[#7782AD] max-w-md mx-auto">
           {currentTask}
         </p>
       </div>
       <div className="max-w-md mx-auto space-y-2">
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-2 " />
         <div className="text-sm text-muted-foreground">
           {progress}% Complete
         </div>
       </div>
       <Card className="max-w-md mx-auto">
-        <CardContent className="p-4">
+        <CardContent className="px-4">
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Total Rows:</span>

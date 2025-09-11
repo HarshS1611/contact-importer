@@ -128,7 +128,7 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {quickActions.map((action, index) => (
             <motion.div
               key={action.title}
@@ -176,7 +176,7 @@ export default function Dashboard() {
       {/* Overview Statistics */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -289,7 +289,7 @@ export default function Dashboard() {
       {/* Data Quality Metrics */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Data Quality</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -357,8 +357,8 @@ export default function Dashboard() {
       </section>
 
       {/* Recent Activity / System Status */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />

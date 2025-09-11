@@ -13,6 +13,7 @@ import { FileData, DetectedField } from '@/lib/types'
 import { FieldMappingEngine } from '@/lib/fieldMapping'
 import { useContactFields } from '@/hooks/useFirestore'
 import { Upload, File, CheckCircle, AlertCircle, Sparkles, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 
 interface FileUploadProps {
   onFileUploaded: (data: FileData) => void
@@ -175,29 +176,22 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
         className="text-center space-y-6 py-12"
       >
         {/* AI Detection Animation */}
-        <div className="flex justify-center mb-6">
-          <motion.div
-            animate={{ 
-              rotate: 360,
-              scale: [1, 1.2, 1]
-            }}
-            transition={{ 
-              rotate: { duration: 2, repeat: Infinity, ease: "linear" },
-              scale: { duration: 1, repeat: Infinity }
-            }}
-            className="p-6 bg-blue-100 rounded-full"
-          >
-            <Sparkles className="h-16 w-16 text-blue-600" />
-          </motion.div>
+        <div className="flex justify-center mb-6 bg-[url('/images/import/upload/processing.svg')] bg-center bg-cover bg-no-repeat rounded-full w-100 h-60 mx-auto">
+          <Image
+            src="/images/import/upload/sparkle.svg"
+            alt="sparkle"
+            width={160}
+            height={160}
+            className=""
+          />
         </div>
 
         <div>
           <h3 className="text-xl font-semibold text-blue-600 mb-2">
-            Auto Detecting Field Mapping...
+          Auto Detecting Field Mapping...
           </h3>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Matching spreadsheet columns to CRM fields using intelligent pattern recognition...
-          </p>
+          Matching spreasheets columns to CRM fields using intelligent pattern recognition...          </p>
         </div>
 
         <div className="max-w-md mx-auto space-y-2">
@@ -205,12 +199,12 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
             <span className="text-muted-foreground">{currentTask}</span>
             <span className="text-muted-foreground">{progress}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-2 text-[#5883C9]" />
         </div>
 
         {fileData && (
           <Card className="max-w-md mx-auto">
-            <CardContent className="p-4">
+            <CardContent className="px-4">
               <div className="flex items-center gap-3">
                 <File className="h-5 w-5 text-blue-600" />
                 <div className="text-left">
@@ -227,52 +221,12 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
     )
   }
 
-  if (fileData) {
-    // Show uploaded file info while waiting for detection to complete
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="text-center space-y-6 py-12"
-      >
-        <div className="flex justify-center mb-4">
-          <div className="p-4 bg-green-100 rounded-full">
-            <CheckCircle className="h-12 w-12 text-green-600" />
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-xl font-semibold text-green-800 mb-2">
-            File Uploaded Successfully
-          </h3>
-          <p className="text-muted-foreground">
-            Analyzing {fileData.rows.length} rows and {fileData.headers.length} columns for field mapping...
-          </p>
-        </div>
-
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <File className="h-5 w-5 text-green-600" />
-              <div className="text-left">
-                <p className="font-medium">{fileData.fileName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {(fileData.fileSize / 1024).toFixed(1)} KB • Ready for processing
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    )
-  }
-
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-semibold mb-2">AI Column Detection...</h3>
+      <div className="text-start">
+        <h3 className="text-xl font-semibold mb-2">Auto Detecting Field Mapping</h3>
         <p className="text-muted-foreground">
-          Analyzing 19 columns and matching with CRM fields using AI...
+          Upload your CSV or Excel file to get started. Our AI will help detect and map your data fields automatically.
         </p>
       </div>
 
@@ -327,7 +281,7 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
 
       {/* File Format Info */}
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
+        <CardContent className="px-4">
           <h4 className="font-medium text-blue-900 mb-2">File Requirements</h4>
           <ul className="text-sm text-blue-700 space-y-1">
             <li>• First row must contain column headers</li>

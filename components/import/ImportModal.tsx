@@ -12,9 +12,11 @@ import { FieldMapping } from './FieldMapping'
 import { ImportPreview } from './ImportPreview'
 import { ImportResults } from './ImportResults'
 import { FileData, DetectedField, FieldMapping as FieldMappingType, ImportResult, ImportStep } from '@/lib/types'
-import { Upload, Search, MapPin, Eye, CheckCircle, ArrowLeft, X } from 'lucide-react'
+import { Upload, Search, MapPin, Eye, CheckCircle, ArrowLeft, X, Minus, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUsers } from '@/hooks/useFirestore'
+import { FieldDetection } from './FieldDetection'
+import Image from 'next/image'
 
 interface ImportModalProps {
   isOpen: boolean
@@ -26,19 +28,16 @@ const steps = [
     id: 'upload' as ImportStep,
     title: 'Detect Fields',
     description: 'Review data structure',
-    icon: Search
   },
   {
     id: 'mapping' as ImportStep,
     title: 'Map Fields',
     description: 'Connect to CRM Fields',
-    icon: MapPin
   },
   {
     id: 'final' as ImportStep,
     title: 'Final Checks',
     description: 'For Duplicates or Errors',
-    icon: Eye
   }
 ]
 
@@ -51,7 +50,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
   const [isImporting, setIsImporting] = useState(false)
   const { data: users, loading: usersLoading } = useUsers()
 
-  const currentStepIndex = currentStep === 'upload' ? 0 : currentStep === 'mapping' ? 1 : 2
+  const currentStepIndex = currentStep === 'upload' ? 0 : currentStep === 'mapping' || currentStep === 'detection' ? 1 : 2
 
   const handleClose = () => {
     if (!isImporting) {
@@ -66,26 +65,26 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
     }
   }
 
-    // Create user lookup for agent validation
-    const userLookup = useMemo(() => {
-      const lookup: Record<string, { id: string; name: string; email: string }> = {}
-      if (users && Array.isArray(users)) {
-        users.forEach(user => {
-          if (user?.email && user?.id) {
-            lookup[user.email.toLowerCase()] = {
-              id: user.id, // Firebase document ID
-              name: user.name || 'Unknown User',
-              email: user.email
-            }
+  // Create user lookup for agent validation
+  const userLookup = useMemo(() => {
+    const lookup: Record<string, { id: string; name: string; email: string }> = {}
+    if (users && Array.isArray(users)) {
+      users.forEach(user => {
+        if (user?.email && user?.id) {
+          lookup[user.email.toLowerCase()] = {
+            id: user.id, // Firebase document ID
+            name: user.name || 'Unknown User',
+            email: user.email
           }
-        })
-      }
-      return lookup
-    }, [users])
+        }
+      })
+    }
+    return lookup
+  }, [users])
 
   const validateMappings = () => {
     const errors: string[] = []
-    
+
     const agentMapping = Object.values(mappings || {}).find(m => m.targetField === 'agentUid')
     if (agentMapping && fileData?.headers && fileData?.rows) {
       const columnIndex = fileData.headers.indexOf(agentMapping.name)
@@ -94,7 +93,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
           .map(row => row && row[columnIndex] ? row[columnIndex] : '')
           .filter(email => email && email.trim())
           .map(email => email.toLowerCase().trim())
-        
+
         const invalidEmails = sampleAgentEmails.filter(email => !userLookup[email])
         if (invalidEmails.length > 0) {
           toast.info(`Agent emails not found in users: ${invalidEmails.join(', ')}${invalidEmails.length > 3 ? '...' : ''}`)
@@ -115,7 +114,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
   const handleFieldsDetected = (fields: DetectedField[]) => {
     console.log('Fields detected:', fields, 'fields')
     setDetectedFields(fields)
-    setCurrentStep('mapping')
+    setCurrentStep('detection')
   }
 
   const handleMappingComplete = (fieldMappings: Record<string, FieldMappingType>) => {
@@ -123,7 +122,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
     setMappings(fieldMappings)
     const validation = validateMappings()
     console.log('Mapping validation result:', validation)
-    
+
     if (!validation.valid) {
       validation.errors.forEach(error => toast.error(error))
       return
@@ -141,18 +140,20 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
 
   const handlePreviousStep = () => {
     if (currentStep === 'mapping') {
+      setCurrentStep('detection')
+    } else if (currentStep === 'final') {
+      setCurrentStep('mapping')
+    } else if (currentStep === 'detection') {
       setCurrentStep('upload')
       setDetectedFields([])
       setMappings({})
-    } else if (currentStep === 'final') {
-      setCurrentStep('mapping')
     }
   }
 
   const getCurrentStepComponent = () => {
     if (importResults) {
       return (
-        <ImportResults 
+        <ImportResults
           results={importResults}
           fileData={fileData!}
           onClose={handleClose}
@@ -163,13 +164,22 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
     switch (currentStep) {
       case 'upload':
         return (
-          <FileUpload 
+          <FileUpload
             onFileUploaded={handleFileUploaded}
             onFieldsDetected={handleFieldsDetected}
             fileData={fileData}
           />
         )
-      
+
+      case 'detection':
+        return (
+          <FieldDetection
+            detectedFields={detectedFields}
+            setCurrentStep={setCurrentStep}
+            onPrevious={handlePreviousStep}
+          />
+        )
+
       case 'mapping':
         return (
           <FieldMapping
@@ -178,7 +188,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
             onPrevious={handlePreviousStep}
           />
         )
-      
+
       case 'final':
         return (
           <ImportPreview
@@ -190,7 +200,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
             setIsImporting={setIsImporting}
           />
         )
-      
+
       default:
         return <div>Unknown step</div>
     }
@@ -198,94 +208,86 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="relative">
+      <DialogContent className="max-w-4xl min-h-[95%] overflow-y-auto">
+        <DialogHeader className="relative items-start">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Upload className="h-5 w-5 text-blue-600" />
+            <div className="p-2 rounded-lg">
+              <Image
+                src="/images/import/step.svg"
+                alt="sparkle"
+                width={40}
+                height={40}
+                className=""
+              />
             </div>
             <div>
-              <DialogTitle className="text-lg">Move Entry to Contact Section</DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <DialogTitle className="text-lg text-[#0C5271]">Move Entry to Contact Section</DialogTitle>
+              <p className="text-sm text-muted-foreground">
                 {currentStep === 'upload' && 'Step 1 of 4'}
+                {currentStep === 'detection' && 'Step 1 of 4'}
                 {currentStep === 'mapping' && 'Step 2 of 4'}
                 {currentStep === 'final' && 'Step 3 of 4'}
               </p>
             </div>
           </div>
-          
-          
+
+          <div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              disabled={isImporting}
+              className="absolute top-2 right-2 bg-[#F2F2F2]"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Progress Steps */}
         {!importResults && (
-          <div className="flex items-center justify-center gap-8 py-6 border-b">
+          <div className="flex items-center justify-between gap-10 py-2 px-3 border-b">
             {steps.map((step, index) => {
               const isActive = index === currentStepIndex
               const isCompleted = index < currentStepIndex
-              const Icon = step.icon
 
               return (
-                <div key={step.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
+                <div key={step.id} className="flex justify-center items-start">
+                  <div className="flex items-center">
                     <div className={`
-                      flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors
-                      ${isActive 
-                        ? 'border-primary bg-primary text-white' 
-                        : isCompleted 
-                        ? 'border-green-500 bg-green-500 text-white'
-                        : 'border-gray-300 bg-white text-gray-400'
+                      flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-colors
+                      ${isActive
+                        ? 'border-primary bg-[#0E4259] text-white'
+                        : isCompleted
+                          ? 'border-green-500 bg-green-500 text-white'
+                          : 'border-[#EBF0F8] bg-[#EBF0F8] text-[#8C8DB0]'
                       }
                     `}>
                       {isCompleted ? (
-                        <CheckCircle className="h-5 w-5" />
+                        <Check className="h-6 w-6 font-bold" />
                       ) : (
                         <span className="text-sm font-bold">{index + 1}</span>
                       )}
                     </div>
-                    
-                    <div className="mt-2 text-center">
-                      <div className={`text-sm font-medium ${
-                        isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-gray-500'
-                      }`}>
+
+                    <div className=" text-start items-center ml-3">
+                      <div className={`text-sm font-medium ${isActive && 'text-[#0E4259]'}`}>
                         {step.title}
                       </div>
-                      <div className="text-xs text-gray-400 max-w-[100px] text-center">
+                      <div className="text-xs text-[#68818C] text-start">
                         {step.description}
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Connector */}
-                  {index < steps.length - 1 && (
-                    <div className={`w-12 h-0.5 mx-4 ${
-                      index < currentStepIndex ? 'bg-green-500' : 'bg-gray-200'
-                    }`} />
-                  )}
+
+                
                 </div>
               )
             })}
           </div>
         )}
 
-        {/* File Info */}
-        {fileData && !importResults && (
-          <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <Upload className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-blue-900">{fileData.fileName}</span>
-            <Badge variant="outline" className="border-blue-300 text-blue-700">
-              {fileData.rows.length} rows
-            </Badge>
-            <Badge variant="outline" className="border-blue-300 text-blue-700">
-              {fileData.headers.length} columns
-            </Badge>
-            {Object.keys(mappings).length > 0 && (
-              <Badge variant="outline" className="border-green-300 text-green-700">
-                {Object.keys(mappings).length} mapped
-              </Badge>
-            )}
-          </div>
-        )}
+     
 
         {/* Step Content */}
         <div className="min-h-[400px]">

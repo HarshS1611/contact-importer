@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DetectedField, FieldMapping as FieldMappingType, ContactField } from '@/lib/types'
 import { useContactFields, useUsers } from '@/hooks/useFirestore'
 import { CustomFieldModal } from './CustomFieldModal'
-import { ArrowRight, ArrowLeft, RotateCcw, Settings, AlertTriangle, Edit, Check, X, Plus } from 'lucide-react'
+import { ArrowRight, ArrowLeft, RotateCcw, Settings, AlertTriangle, Edit, Check, X, Plus, Link2, Info, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface FieldMappingProps {
@@ -141,12 +141,12 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-2"
     >
       {/* Header */}
       <div>
-        <h3 className="text-xl font-semibold mb-2">Smart Field Mapping</h3>
-        <p className="text-muted-foreground">
+        <h3 className="text-xl font-semibold text-[#0E4259] mb-2">Smart Field Mapping</h3>
+        <p className=" text-[#68818C] font-light">
           Review and adjust the AI-powered field mappings below. Click "Edit" next to any mapping to change it.
           You can map to existing CRM fields or create custom fields with different data types.
         </p>
@@ -154,7 +154,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
 
       {/* Action Buttons */}
       <div className="flex justify-between items-center">
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end w-full">
           <Button variant="outline" size="sm" onClick={resetToDefault}>
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset to Default
@@ -164,13 +164,11 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
             size="sm"
             onClick={() => setIsCustomFieldModalOpen(true)}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Custom Field
+            <SlidersHorizontal className="h-4 w-4 mr-2" />
+            More Mapping Options
           </Button>
         </div>
-        <div className="text-sm text-muted-foreground">
-          {Object.keys(mappings).length} of {detectedFields.length} fields mapped
-        </div>
+       
       </div>
 
       {/* Field Mappings */}
@@ -188,8 +186,8 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.05 * index }}
             >
-              <Card className={`${needsReview ? 'border-orange-200 bg-orange-50/20' : ''}`}>
-                <CardContent className="p-4">
+              <Card className={`py-4 ${needsReview ? 'border-[#FFD3D3] drop-shadow-[#E1070714] drop-shadow-lg' : ''}`}>
+                <CardContent className='px-4'>
                   <div className="flex items-center gap-4">
                     {/* Database Field Section */}
                     <div className="flex-1">
@@ -207,21 +205,12 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
 
                       <h4 className="font-semibold text-base mb-2">{field.name ?? 'Name'}</h4>
 
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Sample:</span>
-                        <div className="flex gap-1 flex-wrap">
-                          {field.samples.map((sample, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs px-2 py-1">
-                              {typeof sample === 'object' ? JSON.stringify(sample) : String(sample) || 'Empty'}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+                      
                     </div>
 
                     {/* Arrow */}
                     <div className="flex items-center">
-                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                      <Link2 className="h-5 w-5 text-[#1970F3]" />
                     </div>
 
                     {/* CRM Field Section */}
@@ -274,7 +263,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
 
                       {!isEditing ? (
                         <div>
-                          <h4 className="font-semibold text-base text-blue-600 mb-1">
+                          <h4 className="font-semibold text-base text-[#0051CC] mb-1">
                             {targetField?.label || currentMapping?.targetField || 'No mapping'}
                           </h4>
                           <p className="text-xs text-muted-foreground">
@@ -349,12 +338,22 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
                       )}
                     </div>
                   </div>
-
+                  {/* Sample Data */}
+                  <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-muted-foreground">Sample</span>
+                        <div className="flex gap-1 flex-wrap">
+                          {field.samples.map((sample, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs px-2 py-1 bg-[#F4F5F6] font-light">
+                              {typeof sample === 'object' ? JSON.stringify(sample) : String(sample) || 'Empty'}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                   {/* Manual Review Warning */}
                   {needsReview && (
-                    <div className="mt-3 p-2 bg-orange-100 border border-orange-200 rounded-md flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
-                      <span className="text-sm text-orange-700">
+                    <div className="mt-3 p-2 bg-[#FFF2EF] border border-[#FFF2EF] rounded-md flex justify-center items-center gap-2">
+                      <Info className="h-4 w-4 text-[#D74141] flex-shrink-0" />
+                      <span className="text-sm text-[#D74141]">
                         Manual Review Recommended - Low confidence mapping
                       </span>
                     </div>
@@ -366,29 +365,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
         })}
       </div>
 
-      {/* Summary Card */}
-      <Card className="border-blue-100 bg-blue-50/30">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{Object.keys(mappings).length}</div>
-              <div className="text-muted-foreground">Fields Mapped</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-              {Object.values(mappings).filter(m => Number(m.confidence) >= 70).length}
-              </div>
-              <div className="text-muted-foreground">High Confidence</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {Object.values(mappings).filter(m => m.type === 'custom').length}
-              </div>
-              <div className="text-muted-foreground">Custom Fields</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    
 
       {/* Navigation */}
       <div className="flex justify-between items-center pt-6 border-t">
@@ -397,7 +374,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
           Previous
         </Button>
         <Button onClick={handleNext} disabled={Object.keys(mappings).length === 0}>
-          Next: Final Review
+          Next:
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
