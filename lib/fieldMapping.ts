@@ -388,7 +388,7 @@ export class FieldMappingEngine {
         if (targetField === 'agentUid' && processedValue) {
           const emailLower = processedValue.toLowerCase().trim()
           const agentUid = emailToAgentUidMap[emailLower]
-          processedValue =  emailLower || 'unassigned'
+          processedValue =  agentUid
         }
 
         if (processedValue !== null && processedValue !== undefined) {

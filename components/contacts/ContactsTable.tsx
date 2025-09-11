@@ -148,7 +148,7 @@ export function ContactsTable() {
     switch (fieldKey) {
       case 'agentUid':
         const agent = userLookup[value]
-        return agent ? `${agent.name} (${agent.email})` : value
+        return agent ? `${agent.name}` : value
       
       case 'createdOn':
       case 'updatedOn':
@@ -195,7 +195,6 @@ export function ContactsTable() {
   }
 
   const filteredContacts = useMemo(() => {
-    console.log('Filtering with:', { searchTerm, filterAgent, totalContacts: contacts.length })
     
     const filtered = contacts.filter(contact => {
       // Enhanced search filter - now includes agent email
