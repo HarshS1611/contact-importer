@@ -35,7 +35,7 @@ export function CustomFieldModal({ isOpen, onClose, onFieldCreated }: CustomFiel
         type: type as any,
         core: false
       })
-      const result = await res.unwrap()
+      const result = await res.unwrap() as { id?: string }
       
       const fieldId = result.id || label.toLowerCase().replace(/\s+/g, '_')
       onFieldCreated(fieldId)

@@ -36,6 +36,8 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
+import { ConfirmModal } from '../global/confirmModal'
+import { Contact } from '@/lib/types'
 
 export function ContactsTable() {
   const { data: contacts, loading: contactsLoading, remove } = useContacts()
@@ -43,6 +45,19 @@ export function ContactsTable() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterAgent, setFilterAgent] = useState('all')
   const [selectedContacts, setSelectedContacts] = useState<string[]>([])
+
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean
+    type: 'single' | 'multiple'
+    contact?: Contact
+    contacts?: Contact[]
+    isLoading: boolean
+  }>({
+    isOpen: false,
+    type: 'single',
+    isLoading: false
+  })
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -110,25 +125,46 @@ export function ContactsTable() {
   }
 
   const handleDeleteSelected = async () => {
-    if (confirm(`Are you sure you want to delete ${selectedContacts.length} contacts?`)) {
-      try {
-        await Promise.all(selectedContacts.map(id => remove(id)))
+    const contactsToDelete = contacts.filter(c => selectedContacts.includes(c.id))
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'multiple',
+      contacts: contactsToDelete,
+      isLoading: false
+    })
+  }
+
+  const handleDeleteSingle = (contact: Contact) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'single',
+      contact,
+      isLoading: false
+    })
+  }
+
+  const handleDeleteConfirm = async () => {
+    setDeleteConfirm(prev => ({ ...prev, isLoading: true }))
+
+    try {
+      if (deleteConfirm.type === 'single' && deleteConfirm.contact) {
+        await remove(deleteConfirm.contact.id, `${deleteConfirm.contact.firstName} ${deleteConfirm.contact.lastName}`)
+      } else if (deleteConfirm.type === 'multiple' && deleteConfirm.contacts) {
+        await Promise.all(deleteConfirm.contacts.map(contact => 
+          remove(contact.id, `${contact.firstName} ${contact.lastName}`)
+        ))
         setSelectedContacts([])
-        toast.success(`Successfully deleted ${selectedContacts.length} contacts`)
-      } catch (error) {
-        console.error('Error deleting contacts:', error)
       }
+      
+      setDeleteConfirm({ isOpen: false, type: 'single', isLoading: false })
+    } catch (error) {
+      console.error('Error deleting contacts:', error)
+      setDeleteConfirm(prev => ({ ...prev, isLoading: false }))
     }
   }
 
-  const handleDeleteSingle = async (contactId: string, contactName: string) => {
-    if (confirm(`Are you sure you want to delete "${contactName}"?`)) {
-      try {
-        await remove(contactId)
-      } catch (error) {
-        console.error('Error deleting contact:', error)
-      }
-    }
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, type: 'single', isLoading: false })
   }
 
   const exportContacts = () => {
@@ -583,7 +619,7 @@ export function ContactsTable() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                onClick={() => handleDeleteSingle(contact.id, contactName)}
+                                onClick={() => handleDeleteSingle(contact)}
                               >
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
@@ -628,6 +664,23 @@ export function ContactsTable() {
           )}
         </CardContent>
       </Card>
+       {/* Delete Confirmation Modal */}
+       {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title={deleteConfirm.type === 'single' ? 'Delete Contact' : 'Delete Multiple Contacts'}
+        description={
+          deleteConfirm.type === 'single' && deleteConfirm.contact
+            ? `Are you sure you want to delete "${deleteConfirm.contact.firstName} ${deleteConfirm.contact.lastName}"? This action cannot be undone.`
+            : `Are you sure you want to delete ${deleteConfirm.contacts?.length || 0} contacts? This action cannot be undone.`
+        }
+        confirmText="Delete"
+        variant="destructive"
+        icon="delete"
+        isLoading={deleteConfirm.isLoading}
+      />
     </div>
   )
 }
