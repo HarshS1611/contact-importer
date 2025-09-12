@@ -107,7 +107,7 @@ export function Sidebar() {
       href: '/fields',
       icon: Settings,
       label: 'Contact Fields',
-      badge: contactFields.filter(f => !f.core).length // Only custom fields
+      badge: contactFields.length
     }
   ]
 

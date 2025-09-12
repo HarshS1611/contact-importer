@@ -18,9 +18,10 @@ interface FieldMappingProps {
   detectedFields: DetectedField[]
   onPrevious: () => void
   setCurrentStep: Dispatch<SetStateAction<ImportStep>>
+  onClose: () => void
 }
 
-export function FieldDetection({ detectedFields, setCurrentStep, onPrevious }: FieldMappingProps) {
+export function FieldDetection({ detectedFields, setCurrentStep, onPrevious,onClose }: FieldMappingProps) {
   const { data: contactFields, loading: fieldsLoading } = useContactFields()
   const [mappings, setMappings] = useState<Record<string, FieldMappingType>>({})
 
@@ -29,7 +30,7 @@ export function FieldDetection({ detectedFields, setCurrentStep, onPrevious }: F
     if (!fieldsLoading && contactFields.length > 0) {
       const initialMappings: Record<string, FieldMappingType> = {}
       detectedFields.forEach(field => {
-        if (field.suggestedMapping && field.confidence > 50) {
+        if (field.suggestedMapping) {
           initialMappings[field.name] = {
             name: field.name,
             targetField: field.suggestedMapping,
@@ -39,6 +40,7 @@ export function FieldDetection({ detectedFields, setCurrentStep, onPrevious }: F
           }
         }
       })
+      console.log('Initial Mappings:', initialMappings)
       setMappings(initialMappings)
     }
   }, [detectedFields, contactFields, fieldsLoading])
@@ -49,12 +51,6 @@ export function FieldDetection({ detectedFields, setCurrentStep, onPrevious }: F
     if (confidence >= 90) return 'bg-green-100 text-green-800 border-green-200'
     if (confidence >= 70) return 'bg-yellow-100 text-yellow-800 border-yellow-200'
     return 'bg-orange-100 text-orange-800 border-orange-200'
-  }
-
-  const getConfidenceText = (confidence: number): string => {
-    if (confidence >= 90) return 'High'
-    if (confidence >= 70) return 'Medium'
-    return 'Low'
   }
 
   const handleNext = () => {
@@ -169,7 +165,7 @@ export function FieldDetection({ detectedFields, setCurrentStep, onPrevious }: F
       {/* Navigation */}
       <div className="flex justify-between gap-4 items-center pt-6 border-t">
         <div className='flex-1'>
-          <Button variant="outline" onClick={onPrevious}>
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
         </div>
@@ -177,7 +173,7 @@ export function FieldDetection({ detectedFields, setCurrentStep, onPrevious }: F
           <ArrowLeft className="h-4 w-4" />
           Previous
         </Button>
-        <Button className='bg-[#0E4259]' onClick={handleNext} disabled={Object.keys(mappings).length === 0}>
+        <Button className='bg-[#0E4259]' onClick={handleNext}>
           Next
           <ArrowRight className="h-4 w-4" />
         </Button>

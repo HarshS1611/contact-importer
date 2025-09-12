@@ -1,4 +1,4 @@
-// hooks/useFirestore.ts - Complete with toast.promise for all operations
+// hooks/useFirestore.ts - Enhanced with Transaction Support
 import { useState, useEffect } from 'react';
 import {
   collection,
@@ -11,6 +11,7 @@ import {
   query,
   where,
   writeBatch,
+  runTransaction,
   serverTimestamp,
   setDoc
 } from 'firebase/firestore';
@@ -48,7 +49,12 @@ export function useFirestore<T>(collectionName: string) {
   }, [collectionName]);
 
   // TOAST.PROMISE wrapped add operation
-  const add = (item: Omit<T, 'id'>, entityName?: string) => {
+  const add = (item: Omit<T, 'id'>, entityName?: string, useToast: boolean = true) => {
+   if(!useToast) {
+      return addDoc(collection(db, collectionName), {
+        ...item,
+      }).then(docRef => docRef.id);
+    }
     const addPromise = addDoc(collection(db, collectionName), {
       ...item,
     }).then(docRef => docRef.id);
@@ -74,7 +80,13 @@ export function useFirestore<T>(collectionName: string) {
   };
 
   // TOAST.PROMISE wrapped update operation
-  const update = (id: string, updates: Partial<T>, entityName?: string) => {
+  const update = (id: string, updates: Partial<T>, entityName?: string, useToast: boolean = true) => {
+    if(!useToast) {
+      return updateDoc(doc(db, collectionName, id), {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+    }
     const updatePromise = updateDoc(doc(db, collectionName, id), {
       ...updates,
       updatedAt: serverTimestamp()
@@ -88,7 +100,10 @@ export function useFirestore<T>(collectionName: string) {
   };
 
   // TOAST.PROMISE wrapped remove operation
-  const remove = (id: string, entityName?: string) => {
+  const remove = (id: string, entityName?: string, useToast: boolean = true) => {
+    if(!useToast) {
+      return deleteDoc(doc(db, collectionName, id));
+    }
     const removePromise = deleteDoc(doc(db, collectionName, id));
 
     return toast.promise(removePromise, {
@@ -98,43 +113,173 @@ export function useFirestore<T>(collectionName: string) {
     });
   };
 
-  // TOAST.PROMISE wrapped batch operations
+  // 🔥 NEW: Transaction with retry logic
+  const transactionWrite = async (
+    operations: Array<{
+      type: 'add' | 'update' | 'delete' | 'read';
+      data?: any;
+      id?: string;
+      readCallback?: (docSnapshot: any) => void;
+    }>,
+    operationName?: string,
+    maxRetries: number = 3
+  ) => {
+    const transactionPromise = async () => {
+      let lastError: Error | null = null;
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const result = await runTransaction(db, async (transaction) => {
+            const results: string[] = [];
+            
+            // Phase 1: Handle all reads first (Firestore requirement)
+            const readOperations = operations.filter(op => op.type === 'read');
+            for (const op of readOperations) {
+              if (op.id && op.readCallback) {
+                const docRef = doc(db, collectionName, op.id);
+                const docSnapshot = await transaction.get(docRef);
+                op.readCallback(docSnapshot);
+              }
+            }
+            
+            // Phase 2: Handle all writes
+            const writeOperations = operations.filter(op => op.type !== 'read');
+            for (const op of writeOperations) {
+              const docRef = op.id
+                ? doc(db, collectionName, op.id)
+                : doc(collection(db, collectionName));
+
+              switch (op.type) {
+                case 'add':
+                  transaction.set(docRef, {
+                    ...op.data,
+              
+                  });
+                  results.push(docRef.id);
+                  break;
+                case 'update':
+                  transaction.update(docRef, {
+                    ...op.data,
+                  });
+                  break;
+                case 'delete':
+                  transaction.delete(docRef);
+                  break;
+              }
+            }
+            
+            return results;
+          });
+          
+          return result;
+        } catch (error) {
+          lastError = error as Error;
+          console.warn(`Transaction attempt ${attempt + 1} failed:`, error);
+          
+          // Wait before retry (exponential backoff)
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          }
+        }
+      }
+      
+      throw lastError || new Error('Transaction failed after all retries');
+    };
+
+    return toast.promise(transactionPromise(), {
+      loading: `Processing ${operationName || 'transaction'}...`,
+      success: `Successfully completed ${operationName || 'transaction'}`,
+      error: (error) => `Failed ${operationName || 'transaction'}: ${error.message}`,
+    });
+  };
+
+  // 🔧 Enhanced batch operations with transaction option
   const batchWrite = (
     operations: Array<{
       type: 'add' | 'update' | 'delete';
       data?: any;
       id?: string;
     }>,
-    operationName?: string
+    operationName?: string,
+    options: {
+      chunkSize?: number;
+      useTransaction?: boolean;
+      maxRetries?: number;
+    } = {}
   ) => {
+    const { 
+      chunkSize = 500, 
+      useTransaction = false, 
+      maxRetries = 3 
+    } = options;
+
+    // If using transaction and operations are within limit, use transaction
+    if (useTransaction && operations.length <= 500) {
+      return transactionWrite(operations, operationName, maxRetries);
+    }
+
+    // Otherwise use batch processing
     const batchPromise = (async () => {
-      const batch = writeBatch(db);
+      const chunks = [];
+      for (let i = 0; i < operations.length; i += chunkSize) {
+        chunks.push(operations.slice(i, i + chunkSize));
+      }
+
       const results: string[] = [];
+      const errors: string[] = [];
 
-      operations.forEach(op => {
-        const docRef = op.id
-          ? doc(db, collectionName, op.id)
-          : doc(collection(db, collectionName));
+      for (const [chunkIndex, chunk] of chunks.entries()) {
+        try {
+          if (useTransaction && chunk.length <= 500) {
+            // Use transaction for this chunk
+            const chunkResults = await transactionWrite(
+              chunk,
+              `${operationName} chunk ${chunkIndex + 1}`,
+              maxRetries
+            );
+            results.push(...(await chunkResults.unwrap() || []));
+          } else {
+            // Use batch for this chunk
+            const batch = writeBatch(db);
 
-        switch (op.type) {
-          case 'add':
-            batch.set(docRef, {
-              ...op.data,
+            chunk.forEach(op => {
+              const docRef = op.id
+                ? doc(db, collectionName, op.id)
+                : doc(collection(db, collectionName));
+
+              switch (op.type) {
+                case 'add':
+                  batch.set(docRef, {
+                    ...op.data,
+                    
+                  });
+                  results.push(docRef.id);
+                  break;
+                case 'update':
+                  batch.update(docRef, {
+                    ...op.data,
+                    updatedAt: serverTimestamp()
+                  });
+                  break;
+                case 'delete':
+                  batch.delete(docRef);
+                  break;
+              }
             });
-            results.push(docRef.id);
-            break;
-          case 'update':
-            batch.update(docRef, {
-              ...op.data,
-            });
-            break;
-          case 'delete':
-            batch.delete(docRef);
-            break;
+
+            await batch.commit();
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Chunk ${chunkIndex + 1} failed: ${errorMessage}`);
+          console.error(`Batch chunk ${chunkIndex + 1} failed:`, error);
         }
-      });
+      }
 
-      await batch.commit();
+      if (errors.length > 0) {
+        throw new Error(`Some operations failed: ${errors.join('; ')}`);
+      }
+
       return results;
     })();
 
@@ -142,6 +287,26 @@ export function useFirestore<T>(collectionName: string) {
       loading: `Processing ${operationName || 'batch operation'}...`,
       success: `Successfully completed ${operationName || 'batch operation'}`,
       error: (error) => `Failed ${operationName || 'batch operation'}: ${error.message}`,
+    });
+  };
+
+  // 🔥 NEW: Atomic batch write (ensures all or nothing)
+  const atomicBatchWrite = (
+    operations: Array<{
+      type: 'add' | 'update' | 'delete';
+      data?: any;
+      id?: string;
+    }>,
+    operationName?: string
+  ) => {
+    if (operations.length > 500) {
+      return Promise.reject(new Error('Atomic operations cannot exceed 500 items. Use regular batchWrite for larger operations.'));
+    }
+
+    return batchWrite(operations, operationName, { 
+      useTransaction: true, 
+      chunkSize: 500,
+      maxRetries: 3 
     });
   };
 
@@ -153,7 +318,9 @@ export function useFirestore<T>(collectionName: string) {
     addWithCustomId,
     update,
     remove,
-    batchWrite
+    batchWrite,
+    transactionWrite,
+    atomicBatchWrite
   };
 }
 
@@ -199,62 +366,165 @@ export function useContacts() {
   };
 
   /**
-   * TOAST.PROMISE wrapped import contacts
+   * 🔥 Enhanced import with transaction support
    */
   const importContacts = (
     actions: ReturnType<typeof analyzeImport>,
-    onProgress?: (percent: number, phase: string) => void
+    options: {
+      onProgress?: (percent: number, phase: string) => void;
+      useTransaction?: boolean;
+      chunkSize?: number;
+      atomic?: boolean;
+    } = {}
   ) => {
+    const { 
+      onProgress, 
+      useTransaction = false, 
+      chunkSize = 100,
+      atomic = false 
+    } = options;
+
     const importPromise = (async () => {
       let created = 0, updated = 0, skipped = actions.willSkip.length;
       const errors: string[] = [];
 
-      // Create new contacts
-      onProgress?.(10, 'Creating new contacts...');
-      for (const [index, contact] of actions.willCreate.entries()) {
-        try {
-          await baseHook.add(contact, `Contact ${index + 1}`);
-          created++;
-          onProgress?.(10 + (index / actions.willCreate.length) * 40, 'Creating contacts...');
-        } catch (e) {
-          const error = e instanceof Error ? e.message : 'Unknown error';
-          errors.push(`Create failed: ${error}`);
-        }
-      }
+      // If atomic is requested and total operations <= 500, use single transaction
+      const totalOperations = actions.willCreate.length + actions.willMerge.length;
+      if (atomic && totalOperations <= 500) {
+        onProgress?.(10, 'Preparing atomic import...');
 
-      // Merge existing contacts
-      onProgress?.(50, 'Merging existing contacts...');
-      for (const [index, { contact, existing }] of actions.willMerge.entries()) {
+        const allOperations = [
+          ...actions.willCreate.map(contact => ({
+            type: 'add' as const,
+            data: { 
+              ...contact, 
+            }
+          })),
+          ...actions.willMerge.map(({ contact, existing }) => {
+            const merged = { ...existing };
+            Object.keys(contact).forEach(key => {
+              const newValue = (contact[key] ?? '').toString().trim();
+              if (newValue && newValue !== (existing[key] ?? '').toString().trim()) {
+                merged[key] = newValue;
+              }
+            });
+            return {
+              type: 'update' as const,
+              id: existing.id,
+              data: merged
+            };
+          })
+        ];
+
         try {
-          const merged = { ...existing };
-          Object.keys(contact).forEach(key => {
-            const n = (contact[key] ?? '').toString().trim();
-            if (n && n !== (existing[key] ?? '').toString().trim()) merged[key] = n;
-          });
-          await baseHook.update(existing.id, merged, `Contact ${existing.firstName} ${existing.lastName}`);
-          updated++;
-          onProgress?.(50 + (index / actions.willMerge.length) * 40, 'Merging contacts...');
+          await baseHook.atomicBatchWrite(allOperations, 'Atomic contact import');
+          created = actions.willCreate.length;
+          updated = actions.willMerge.length;
+          onProgress?.(100, 'Atomic import complete!');
         } catch (e) {
           const error = e instanceof Error ? e.message : 'Unknown error';
-          errors.push(`Merge failed: ${error}`);
+          errors.push(`Atomic import failed: ${error}`);
+        }
+      } else {
+        // Regular chunked processing
+        onProgress?.(10, 'Creating new contacts...');
+        for (let i = 0; i < actions.willCreate.length; i += chunkSize) {
+          const chunk = actions.willCreate.slice(i, i + chunkSize);
+          const operations = chunk.map(contact => ({
+            type: 'add' as const,
+            data: { 
+              ...contact, 
+            }
+          }));
+
+          try {
+            await baseHook.batchWrite(
+              operations, 
+              `Contacts batch ${Math.floor(i/chunkSize) + 1}`,
+              { useTransaction, chunkSize: 500 }
+            );
+            created += chunk.length;
+            onProgress?.(10 + (i / actions.willCreate.length) * 40, 'Creating contacts...');
+          } catch (e) {
+            const error = e instanceof Error ? e.message : 'Unknown error';
+            errors.push(`Batch create failed: ${error}`);
+          }
+        }
+
+        // Merge existing contacts in chunks
+        onProgress?.(50, 'Merging existing contacts...');
+        for (let i = 0; i < actions.willMerge.length; i += chunkSize) {
+          const chunk = actions.willMerge.slice(i, i + chunkSize);
+          const operations = chunk.map(({ contact, existing }) => {
+            const merged = { ...existing };
+            Object.keys(contact).forEach(key => {
+              const newValue = (contact[key] ?? '').toString().trim();
+              if (newValue && newValue !== (existing[key] ?? '').toString().trim()) {
+                merged[key] = newValue;
+              }
+            });
+            return {
+              type: 'update' as const,
+              id: existing.id,
+              data: merged
+            };
+          });
+
+          try {
+            await baseHook.batchWrite(
+              operations, 
+              `Merge batch ${Math.floor(i/chunkSize) + 1}`,
+              { useTransaction, chunkSize: 500 }
+            );
+            updated += chunk.length;
+            onProgress?.(50 + (i / actions.willMerge.length) * 40, 'Merging contacts...');
+          } catch (e) {
+            const error = e instanceof Error ? e.message : 'Unknown error';
+            errors.push(`Batch merge failed: ${error}`);
+          }
         }
       }
 
       onProgress?.(100, 'Import complete!');
-      return { created, updated, skipped, errors };
+      return { 
+        created, 
+        updated, 
+        skipped, 
+        errors,
+        totalOperations
+      };
     })();
 
     return toast.promise(importPromise, {
-      loading: `Importing ${actions.willCreate.length + actions.willMerge.length} contacts...`,
-      success: (r) => `Import complete! ${r.created} created, ${r.updated} merged, ${r.skipped} skipped.`,
+      loading: `Importing ${actions.willCreate.length + actions.willMerge.length} contacts${atomic ? ' (atomic)' : ''}...`,
+      success: (r) => `Import complete! ${r.created} created, ${r.updated} merged, ${r.skipped} skipped${r.errors.length > 0 ? ` (${r.errors.length} errors)` : ''}.`,
       error: (e) => `Import failed: ${e.message}`,
+    });
+  };
+
+  // 🔥 NEW: Atomic import (all or nothing)
+  const atomicImportContacts = (
+    actions: ReturnType<typeof analyzeImport>,
+    onProgress?: (percent: number, phase: string) => void
+  ) => {
+    const totalOperations = actions.willCreate.length + actions.willMerge.length;
+    
+    if (totalOperations > 500) {
+      return Promise.reject(new Error(`Atomic import cannot exceed 500 operations. Current: ${totalOperations}. Use regular import for larger datasets.`));
+    }
+
+    return importContacts(actions, { 
+      onProgress, 
+      atomic: true, 
+      useTransaction: true 
     });
   };
 
   return {
     ...baseHook,
     analyzeImport,
-    importContacts
+    importContacts,
+    atomicImportContacts
   };
 }
 
@@ -289,7 +559,7 @@ export function useUsers() {
     updateUser,
     deleteUser,
     findUserByEmail,
-    findUserById
+    findUserById,
   };
 }
 
@@ -307,10 +577,14 @@ export function useContactFields() {
         { id: 'createdOn', label: 'Created Date', type: 'datetime' as const, core: true, required: false },
       ];
 
-      // Initialize default fields with toast
-      defaultFields.forEach(field => {
-        result.addWithCustomId(field.id, field, `Core field "${field.label}"`);
-      });
+      // Initialize default fields atomically
+      const operations = defaultFields.map(field => ({
+        type: 'add' as const,
+        id: field.id,
+        data: field
+      }));
+
+      result.atomicBatchWrite(operations, 'Initialize core fields');
     }
   }, [result.loading, result.data.length, result]);
 

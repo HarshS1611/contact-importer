@@ -74,6 +74,8 @@ export class FieldMappingEngine {
       'firstName': ['first', 'fname', 'firstname', 'given', 'forename', 'christian'],
       'lastName': ['last', 'lname', 'lastname', 'surname', 'family', 'sur'],
       'fullName': ['name', 'full', 'fullname', 'complete', 'display'],
+      'assigned': ['assigned', 'agent', 'user', 'responsible'],
+      'agent': ['agent', 'email', 'user', 'responsible'],
       'email': ['email', 'mail', 'e-mail', 'emailaddress', 'email_address', 'electronic'],
       'phone': ['phone', 'tel', 'telephone', 'mobile', 'cell', 'contact', 'number', 'cellular'],
       'workPhone': ['work', 'office', 'business', 'company'],
@@ -88,7 +90,6 @@ export class FieldMappingEngine {
       'agentUid': ['agent', 'assigned', 'owner', 'rep', 'representative', 'sales', 'manager'],
       'createdOn': ['created', 'createdon', 'date', 'added', 'timestamp', 'time', 'imported'],
       'updatedOn': ['updated', 'modified', 'changed', 'edited', 'last'],
-      'notes': ['notes', 'comments', 'remarks', 'description', 'memo'],
       'tags': ['tags', 'categories', 'labels', 'keywords'],
       'status': ['status', 'state', 'condition', 'stage'],
       'source': ['source', 'origin', 'channel', 'referral', 'lead']

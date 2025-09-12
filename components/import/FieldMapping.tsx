@@ -17,9 +17,10 @@ interface FieldMappingProps {
   detectedFields: DetectedField[]
   onMappingComplete: (mappings: Record<string, FieldMappingType>) => void
   onPrevious: () => void
+  onClose: () => void
 }
 
-export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: FieldMappingProps) {
+export function FieldMapping({ detectedFields, onMappingComplete, onPrevious,onClose }: FieldMappingProps) {
   const { data: contactFields, loading: fieldsLoading } = useContactFields()
   const [mappings, setMappings] = useState<Record<string, FieldMappingType>>({})
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -30,7 +31,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
     if (!fieldsLoading && contactFields.length > 0) {
       const initialMappings: Record<string, FieldMappingType> = {}
       detectedFields.forEach(field => {
-        if (field.suggestedMapping && field.confidence > 50) {
+        if (field.suggestedMapping) {
           initialMappings[field.name] = {
             name: field.name,
             targetField: field.suggestedMapping,
@@ -82,7 +83,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
         toast.success(`Custom field "${newField.label}" created and ready for mapping`)
       }
     }, 500)
-    
+
 
     setEditingField(null)
   }
@@ -117,7 +118,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
     return 'Low'
   }
 
-  
+
 
   const coreFields = contactFields.filter(f => f.core)
   const customFieldOptions = contactFields.filter(f => !f.core)
@@ -168,7 +169,7 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
             More Mapping Options
           </Button>
         </div>
-       
+
       </div>
 
       {/* Field Mappings */}
@@ -199,13 +200,13 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
                           variant="outline"
                           className={`${getConfidenceColor(Number(field.confidence))} text-xs`}
                         >
-                            {Number(field.confidence)}% • {getConfidenceText(Number(field.confidence))}
+                          {Number(field.confidence)}% • {getConfidenceText(Number(field.confidence))}
                         </Badge>
                       </div>
 
                       <h4 className="font-semibold text-base mb-2">{field.name ?? 'Name'}</h4>
 
-                      
+
                     </div>
 
                     {/* Arrow */}
@@ -340,15 +341,15 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
                   </div>
                   {/* Sample Data */}
                   <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-muted-foreground">Sample</span>
-                        <div className="flex gap-1 flex-wrap">
-                          {field.samples.map((sample, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs px-2 py-1 bg-[#F4F5F6] font-light">
-                              {typeof sample === 'object' ? JSON.stringify(sample) : String(sample) || 'Empty'}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+                    <span className="text-xs text-muted-foreground">Sample</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {field.samples.map((sample, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs px-2 py-1 bg-[#F4F5F6] font-light">
+                          {typeof sample === 'object' ? JSON.stringify(sample) : String(sample) || 'Empty'}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
                   {/* Manual Review Warning */}
                   {needsReview && (
                     <div className="mt-3 p-2 bg-[#FFF2EF] border border-[#FFF2EF] rounded-md flex justify-center items-center gap-2">
@@ -365,17 +366,22 @@ export function FieldMapping({ detectedFields, onMappingComplete, onPrevious }: 
         })}
       </div>
 
-    
+
 
       {/* Navigation */}
-      <div className="flex justify-between items-center pt-6 border-t">
+      <div className="flex justify-between gap-4 items-center pt-6 border-t">
+        <div className='flex-1'>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+        </div>
         <Button variant="outline" onClick={onPrevious}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-4 w-4" />
           Previous
         </Button>
-        <Button onClick={handleNext} disabled={Object.keys(mappings).length === 0}>
-          Next:
-          <ArrowRight className="h-4 w-4 ml-2" />
+        <Button className='bg-[#0E4259]' onClick={handleNext} disabled={Object.keys(mappings).length === 0}>
+          Next
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
 

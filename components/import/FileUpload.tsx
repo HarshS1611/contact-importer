@@ -19,14 +19,16 @@ interface FileUploadProps {
   onFileUploaded: (data: FileData) => void
   onFieldsDetected: (fields: DetectedField[]) => void
   fileData: FileData | null
+  onClose: () => void
+
 }
 
-export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileUploadProps) {
+export function FileUpload({ onFileUploaded, onFieldsDetected, fileData, onClose }: FileUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTask, setCurrentTask] = useState('')
   const [error, setError] = useState<string | null>(null)
-  
+
   const { data: contactFields } = useContactFields()
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -50,29 +52,29 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
 
       if (fileExtension === 'xlsx' || fileExtension === 'xls') {
         setCurrentTask('Parsing Excel file...')
-        
+
         // Read Excel file
         const buffer = await file.arrayBuffer()
         const workbook = XLSX.read(buffer, { type: 'array' })
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
-        
+
         if (jsonData.length > 0) {
           headers = jsonData[0] || []
           rows = jsonData.slice(1).filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''))
         }
       } else if (fileExtension === 'csv') {
         setCurrentTask('Parsing CSV file...')
-        
+
         // Read CSV file
         const text = await file.text()
-        const result = Papa.parse(text, { 
+        const result = Papa.parse(text, {
           header: false,
           skipEmptyLines: true,
           transformHeader: (header) => header.trim()
         })
-        
+
         if (result.data.length > 0) {
           headers = (result.data[0] as string[]) || []
           rows = (result.data.slice(1) as string[][]).filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''))
@@ -119,7 +121,7 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
         if (contactFields.length > 0) {
           setCurrentTask('AI Column Detection...')
           setProgress(0)
-          
+
           // Simulate AI detection progress
           const detectionInterval = setInterval(() => {
             setProgress(prev => Math.min(prev + 15, 90))
@@ -128,16 +130,16 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
           try {
             const engine = new FieldMappingEngine(contactFields)
             const detected = engine.detectFields(processedFileData.headers, processedFileData.rows)
-            
+
             clearInterval(detectionInterval)
             setProgress(100)
             setCurrentTask('Field detection complete!')
-            
+
             setTimeout(() => {
               onFieldsDetected(detected)
               setIsProcessing(false)
             }, 500)
-            
+
           } catch (detectionError) {
             clearInterval(detectionInterval)
             console.error('Field detection failed:', detectionError)
@@ -188,10 +190,10 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
 
         <div>
           <h3 className="text-xl font-semibold text-blue-600 mb-2">
-          Auto Detecting Field Mapping...
+            Auto Detecting Field Mapping...
           </h3>
           <p className="text-muted-foreground max-w-md mx-auto">
-          Matching spreasheets columns to CRM fields using intelligent pattern recognition...          </p>
+            Matching spreasheets columns to CRM fields using intelligent pattern recognition...          </p>
         </div>
 
         <div className="max-w-md mx-auto space-y-2">
@@ -217,6 +219,9 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
             </CardContent>
           </Card>
         )}
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
       </motion.div>
     )
   }
@@ -235,12 +240,11 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
         <CardContent className="p-8">
           <div
             {...getRootProps()}
-            className={`text-center cursor-pointer transition-all ${
-              isDragActive ? 'bg-blue-50 border-blue-300' : ''
-            }`}
+            className={`text-center cursor-pointer transition-all ${isDragActive ? 'bg-blue-50 border-blue-300' : ''
+              }`}
           >
             <input {...getInputProps()} />
-            
+
             <div className="flex justify-center mb-4">
               <div className={`p-4 rounded-full ${isDragActive ? 'bg-blue-100' : 'bg-gray-100'}`}>
                 <Upload className={`h-12 w-12 ${isDragActive ? 'text-blue-600' : 'text-gray-600'}`} />
@@ -291,6 +295,10 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData }: FileU
           </ul>
         </CardContent>
       </Card>
+
+      <Button variant="outline" onClick={onClose} disabled={isProcessing}>
+        Cancel
+      </Button>
     </div>
   )
 }

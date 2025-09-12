@@ -73,7 +73,7 @@ export function ContactsTable() {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(25)
 
   // Get all unique field keys from contacts and contact fields
   const allFieldKeys = useMemo(() => {
@@ -139,7 +139,7 @@ export function ContactsTable() {
   }
 
   // Format field value for display
-  const formatFieldValue = (value: any, fieldKey: string, fieldType?: string): string => {
+  const formatFieldValue = (value: any, fieldKey: string, fieldType?: string): string | React.JSX.Element => {
     if (value === null || value === undefined || value === '') {
       return '-'
     }
@@ -148,7 +148,7 @@ export function ContactsTable() {
     switch (fieldKey) {
       case 'agentUid':
         const agent = userLookup[value]
-        return agent ? `${agent.name}` : value
+        return agent ? `${agent.name}` : '-'
       
       case 'createdOn':
       case 'updatedOn':
@@ -312,8 +312,9 @@ export function ContactsTable() {
         await remove(deleteConfirm.contact.id, `${deleteConfirm.contact.firstName} ${deleteConfirm.contact.lastName}`)
       } else if (deleteConfirm.type === 'multiple' && deleteConfirm.contacts) {
         await Promise.all(deleteConfirm.contacts.map(contact => 
-          remove(contact.id, `${contact.firstName} ${contact.lastName}`)
+          remove(contact.id, `${contact.firstName} ${contact.lastName}`,false)
         ))
+        toast.success(`Deleted ${deleteConfirm.contacts.length} contacts successfully`);
         setSelectedContacts([])
       }
       

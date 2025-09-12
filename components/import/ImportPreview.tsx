@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { FileData, FieldMapping, ImportResult } from '@/lib/types'
 import { FieldMappingEngine } from '@/lib/fieldMapping'
 import { useContacts, useUsers, useContactFields } from '@/hooks/useFirestore'
-import { CheckCircle, AlertTriangle, Shield, Loader2 } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Shield, Loader2, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 
 interface ImportPreviewProps {
@@ -19,6 +19,7 @@ interface ImportPreviewProps {
   onPrevious: () => void
   isImporting: boolean
   setIsImporting: (importing: boolean) => void
+  onClose: () => void
 }
 
 interface PreviewSummary {
@@ -35,7 +36,8 @@ export function ImportPreview({
   onImportComplete,
   onPrevious,
   isImporting,
-  setIsImporting
+  setIsImporting,
+  onClose
 }: ImportPreviewProps) {
   const [progress, setProgress] = useState(0)
   const [currentPhase, setCurrentPhase] = useState<'analyzing' | 'preview' | 'importing'>('analyzing')
@@ -128,7 +130,7 @@ export function ImportPreview({
 
     try {
       console.log('Starting import with summary:', previewSummary)
-      const res = await importContacts(previewSummary, (pc) => setProgress(pc));
+      const res = importContacts(previewSummary);
 
       const results = await res.unwrap()
       const importResults: ImportResult = {
@@ -230,9 +232,16 @@ export function ImportPreview({
 
           </motion.div>
         </div>
+
+
         {/* Navigation */}
-        <div className="flex justify-between pt-6">
-          <Button variant="outline" onClick={onPrevious} disabled={isImporting}>
+        <div className="flex justify-between gap-4 items-center pt-6 border-t">
+          <div className='flex-1'>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+          <Button variant="outline" onClick={onPrevious}>
             Previous
           </Button>
           <Button
@@ -312,6 +321,17 @@ export function ImportPreview({
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-between gap-4 items-center pt-6">
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="outline" onClick={onPrevious}>
+          Previous
+        </Button>
+
+      </div>
     </motion.div>
   )
+
 }

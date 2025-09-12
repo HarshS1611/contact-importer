@@ -96,7 +96,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
 
         const invalidEmails = sampleAgentEmails.filter(email => !userLookup[email])
         if (invalidEmails.length > 0) {
-          toast.info(`Agent emails not found in users: ${invalidEmails.join(', ')}${invalidEmails.length > 3 ? '...' : ''}`)
+          toast.info(`Agent emails not found in users: ${invalidEmails.slice(0,3).join(', ')}${invalidEmails.length > 3 ? '...' : ''}`)
         }
       }
     }
@@ -112,7 +112,6 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
   }
 
   const handleFieldsDetected = (fields: DetectedField[]) => {
-    console.log('Fields detected:', fields, 'fields')
     setDetectedFields(fields)
     setCurrentStep('detection')
   }
@@ -168,6 +167,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
             onFileUploaded={handleFileUploaded}
             onFieldsDetected={handleFieldsDetected}
             fileData={fileData}
+            onClose={handleClose}
           />
         )
 
@@ -177,6 +177,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
             detectedFields={detectedFields}
             setCurrentStep={setCurrentStep}
             onPrevious={handlePreviousStep}
+            onClose={handleClose}
           />
         )
 
@@ -186,6 +187,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
             detectedFields={detectedFields}
             onMappingComplete={handleMappingComplete}
             onPrevious={handlePreviousStep}
+            onClose={handleClose}
           />
         )
 
@@ -198,6 +200,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
             onPrevious={handlePreviousStep}
             isImporting={isImporting}
             setIsImporting={setIsImporting}
+            onClose={handleClose}
           />
         )
 
