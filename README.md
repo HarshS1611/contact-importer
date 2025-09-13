@@ -25,7 +25,8 @@ This full-stack application solves the complex problem of importing contact data
 
 ### 🎥 Demo
 
-> **Live Demo**: [Contact Importer System](#) _(Add your deployed URL here)_
+> **Live Demo**: [Contact Importer System](https://www.loom.com/share/291880048ec2454f8056468de8c7afd8?sid=06d382f3-1a73-40fc-8384-66b35f17f3c7)
+> **Deployed Link**: https://contact-importer-neon.vercel.app/
 
 *Complete application flow: Authentication → Dashboard → Add Users/Agents → Import Workflow → Contact Management*
 
