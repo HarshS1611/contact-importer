@@ -61,7 +61,6 @@ export function useFirestore<T>(collectionName: string) {
   const add = (item: Omit<T, 'id'>, entityName?: string, useToast: boolean = true) => {
     if (!user) {
       const errorMsg = 'User not authenticated';
-      toast.error(errorMsg);
       return Promise.reject(new Error(errorMsg));
     }
     const companyId = user.uid;
@@ -85,8 +84,7 @@ export function useFirestore<T>(collectionName: string) {
   // TOAST.PROMISE wrapped addWithCustomId operation
   const addWithCustomId = (id: string, item: Omit<T, 'id'>, entityName?: string) => {
     if (!user) {
-      const errorMsg = 'User not authenticated';
-      toast.error(errorMsg);
+      const errorMsg = 'User not authenticated';    
       return Promise.reject(new Error(errorMsg));
     }
     const companyId = user.uid;
@@ -105,7 +103,6 @@ export function useFirestore<T>(collectionName: string) {
   const update = (id: string, updates: Partial<T>, entityName?: string, useToast: boolean = true) => {
     if (!user) {
       const errorMsg = 'User not authenticated';
-      toast.error(errorMsg);
       return Promise.reject(new Error(errorMsg));
     }
     const companyId = user.uid;
@@ -131,7 +128,6 @@ export function useFirestore<T>(collectionName: string) {
   const remove = (id: string, entityName?: string, useToast: boolean = true) => {
     if (!user) {
       const errorMsg = 'User not authenticated';
-      toast.error(errorMsg);
       return Promise.reject(new Error(errorMsg));
     }
     const companyId = user.uid;
@@ -160,7 +156,6 @@ export function useFirestore<T>(collectionName: string) {
   ) => {
     if (!user) {
       const errorMsg = 'User not authenticated';
-      toast.error(errorMsg);
       return Promise.reject(new Error(errorMsg));
     }
     const companyId = user.uid;
@@ -255,7 +250,6 @@ export function useFirestore<T>(collectionName: string) {
 
     if (!user) {
       const errorMsg = 'User not authenticated';
-      toast.error(errorMsg);
       return Promise.reject(new Error(errorMsg));
     }
     const companyId = user.uid;

@@ -119,10 +119,6 @@ export default function Dashboard() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Clock className="h-4 w-4" />
-          Last updated: {new Date().toLocaleDateString()}
-        </div>
       </div>
 
       {/* Quick Actions */}
@@ -138,7 +134,7 @@ export default function Dashboard() {
             >
               {typeof action.action === 'string' ? (
                 <Link href={action.action}>
-                  <Card className="cursor-pointer hover:shadow-lg transition-all group">
+                  <Card className="cursor-pointer hover:shadow-lg transition-all group h-full">
                     <CardContent className="p-6">
                       <div className={`${action.color} ${action.hoverColor} p-3 rounded-lg w-fit mb-4 transition-colors`}>
                         <action.icon className="h-6 w-6 text-white" />
@@ -153,7 +149,7 @@ export default function Dashboard() {
                 </Link>
               ) : (
                 <Card 
-                  className="cursor-pointer hover:shadow-lg transition-all group"
+                  className="cursor-pointer hover:shadow-lg transition-all group h-full"
                   onClick={action.action}
                 >
                   <CardContent className="p-6">
@@ -182,7 +178,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <Card>
+            <Card className='h-full'>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -208,7 +204,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <Card>
+            <Card className='h-full'>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -234,7 +230,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <Card>
+            <Card className='h-full'>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -262,7 +258,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
           >
-            <Card>
+            <Card className='h-full'>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
