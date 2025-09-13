@@ -290,7 +290,6 @@ export function FileUpload({ onFileUploaded, onFieldsDetected, fileData, onClose
           <ul className="text-sm text-blue-700 space-y-1">
             <li>• First row must contain column headers</li>
             <li>• Supported formats: CSV, Excel (.xlsx, .xls)</li>
-            <li>• Maximum file size: 10MB</li>
             <li>• UTF-8 encoding recommended for CSV files</li>
           </ul>
         </CardContent>

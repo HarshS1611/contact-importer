@@ -190,8 +190,8 @@ export default function LoginPage() {
               <div className="text-center">
                 <h4 className="font-medium text-blue-900 mb-2">Demo Access</h4>
                 <div className="text-sm text-blue-700 space-y-1">
-                  <p><strong>Email:</strong> admin@demo.com</p>
-                  <p><strong>Password:</strong> demo123456</p>
+                  <p><strong>Email:</strong> ab@gmail.com</p>
+                  <p><strong>Password:</strong> 123456</p>
                 </div>
               </div>
             </CardContent>

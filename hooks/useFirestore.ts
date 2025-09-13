@@ -3,17 +3,17 @@ import { useState, useEffect } from 'react';
 import {
   collection,
   doc,
-  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
-  query,
-  where,
   writeBatch,
   runTransaction,
   serverTimestamp,
-  setDoc
+  setDoc,
+  query,
+  getDocs,
+  where
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Contact, User, ContactField } from '@/lib/types';
@@ -531,8 +531,13 @@ export function useContacts() {
 export function useUsers() {
   const result = useFirestore<User>('users');
 
-  const createUser = (userData: Omit<User, 'id'>) => {
-    return result.add(userData, userData.name);
+  const createUser = async (userData: Omit<User, 'id'>) => {
+    const unique = await isEmailUnique(userData.email);
+    if (!unique) {
+      toast.error('User with this email already exists');
+      throw new Error('User with this email already exists');
+    }
+    return result.add(userData);
   };
 
   const updateUser = (userId: string, userData: Partial<User>, userName: string) => {
@@ -543,23 +548,17 @@ export function useUsers() {
     return result.remove(userId, userName);
   };
 
-  const findUserByEmail = (email: string): User | undefined => {
-    return result.data.find(user =>
-      user.email.toLowerCase() === email.toLowerCase()
-    );
-  };
-
-  const findUserById = (agentUid: string): User | undefined => {
-    return result.data.find(user => user.id === agentUid);
-  };
+  async function isEmailUnique(email: string) {
+    const q = query(collection(db, 'users'), where('email', '==', email.toLowerCase()));
+    const snapshot = await getDocs(q);
+    return snapshot.empty; // true if no existing users with this email
+  }
 
   return {
     ...result,
     createUser,
     updateUser,
     deleteUser,
-    findUserByEmail,
-    findUserById,
   };
 }
 
