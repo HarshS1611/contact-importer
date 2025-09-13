@@ -19,19 +19,21 @@ import { db } from '@/lib/firebase';
 import { Contact, User, ContactField } from '@/lib/types';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export function useFirestore<T>(collectionName: string) {
   const { user } = useAuth()
+  const router = useRouter()
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
-      return;
+      router.push('/auth/login')
     }
 
-    const companyId = user.uid;
+    const companyId = user?.uid;
     const collectionRef = collection(db, `company/${companyId}/${collectionName}`);
 
     const unsubscribe = onSnapshot(
@@ -576,14 +578,16 @@ export function useContacts() {
 export function useUsers() {
   const result = useFirestore<User>('users');
   const { user } = useAuth()
-  if (!user?.uid) {
-    const errorMsg = 'User not authenticated';
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
-  }
+  const router = useRouter()
+  
+  useEffect(() => {
+    if (!user) {
+      router.push('/auth/login');
+    }
+  }, [user, router]);
   const companyId = user?.uid;
   const createUser = async (userData: Omit<User, 'id'>) => {
-    const unique = await isEmailUnique(userData.email, companyId);
+    const unique = await isEmailUnique(userData.email, companyId ?? '');
     if (!unique) {
       toast.error('User with this email already exists');
       throw new Error('User with this email already exists');
@@ -603,7 +607,7 @@ export function useUsers() {
 
     const q = query(collection(db, `company/${companyId}/users`), where('email', '==', email.toLowerCase()));
     const snapshot = await getDocs(q);
-    return snapshot.empty; 
+    return snapshot.empty;
   }
 
   return {
