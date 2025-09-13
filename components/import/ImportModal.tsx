@@ -97,6 +97,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
         const invalidEmails = sampleAgentEmails.filter(email => !userLookup[email])
         if (invalidEmails.length > 0) {
           toast.info(`Agent emails not found in users: ${invalidEmails.slice(0,3).join(', ')}${invalidEmails.length > 3 ? '...' : ''}`)
+        
         }
       }
     }

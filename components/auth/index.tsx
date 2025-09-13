@@ -1,4 +1,3 @@
-// components/auth/AuthGuard.tsx - Authentication Protection
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
@@ -11,6 +10,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
+  const router = useRouter()
   const { user, loading } = useAuth()
   const pathname = usePathname()
   
@@ -23,7 +23,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const publicRoutes = ['/auth/login', '/auth/signup']
   const isPublicRoute = publicRoutes.includes(pathname)
 
-  const router = useRouter()
+
 
   // If user is not logged in and trying to access private route
   if (!user && !isPublicRoute) {

@@ -18,14 +18,21 @@ import {
 import { db } from '@/lib/firebase';
 import { Contact, User, ContactField } from '@/lib/types';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useFirestore<T>(collectionName: string) {
+  const { user } = useAuth()
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const collectionRef = collection(db, collectionName);
+    if (!user) {
+      return;
+    }
+
+    const companyId = user.uid;
+    const collectionRef = collection(db, `company/${companyId}/${collectionName}`);
 
     const unsubscribe = onSnapshot(
       collectionRef,
@@ -46,16 +53,23 @@ export function useFirestore<T>(collectionName: string) {
     );
 
     return () => unsubscribe();
-  }, [collectionName]);
+  }, [collectionName, user]);
 
   // TOAST.PROMISE wrapped add operation
   const add = (item: Omit<T, 'id'>, entityName?: string, useToast: boolean = true) => {
-   if(!useToast) {
-      return addDoc(collection(db, collectionName), {
+    if (!user) {
+      const errorMsg = 'User not authenticated';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
+    }
+    const companyId = user.uid;
+    if (!useToast) {
+      return addDoc(collection(db, `company/${companyId}/${collectionName}`), {
         ...item,
       }).then(docRef => docRef.id);
     }
-    const addPromise = addDoc(collection(db, collectionName), {
+
+    const addPromise = addDoc(collection(db, `company/${user.uid}/${collectionName}`), {
       ...item,
     }).then(docRef => docRef.id);
 
@@ -68,7 +82,13 @@ export function useFirestore<T>(collectionName: string) {
 
   // TOAST.PROMISE wrapped addWithCustomId operation
   const addWithCustomId = (id: string, item: Omit<T, 'id'>, entityName?: string) => {
-    const addPromise = setDoc(doc(db, collectionName, id), {
+    if (!user) {
+      const errorMsg = 'User not authenticated';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
+    }
+    const companyId = user.uid;
+    const addPromise = setDoc(doc(db, `company/${companyId}/${collectionName}`, id), {
       ...item,
     }).then(() => id);
 
@@ -81,13 +101,19 @@ export function useFirestore<T>(collectionName: string) {
 
   // TOAST.PROMISE wrapped update operation
   const update = (id: string, updates: Partial<T>, entityName?: string, useToast: boolean = true) => {
-    if(!useToast) {
-      return updateDoc(doc(db, collectionName, id), {
+    if (!user) {
+      const errorMsg = 'User not authenticated';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
+    }
+    const companyId = user.uid;
+    if (!useToast) {
+      return updateDoc(doc(db, `company/${companyId}/${collectionName}`, id), {
         ...updates,
         updatedAt: serverTimestamp()
       });
     }
-    const updatePromise = updateDoc(doc(db, collectionName, id), {
+    const updatePromise = updateDoc(doc(db, `company/${companyId}/${collectionName}`, id), {
       ...updates,
       updatedAt: serverTimestamp()
     });
@@ -101,10 +127,16 @@ export function useFirestore<T>(collectionName: string) {
 
   // TOAST.PROMISE wrapped remove operation
   const remove = (id: string, entityName?: string, useToast: boolean = true) => {
-    if(!useToast) {
-      return deleteDoc(doc(db, collectionName, id));
+    if (!user) {
+      const errorMsg = 'User not authenticated';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
     }
-    const removePromise = deleteDoc(doc(db, collectionName, id));
+    const companyId = user.uid;
+    if (!useToast) {
+      return deleteDoc(doc(db, `company/${companyId}/${collectionName}`, id));
+    }
+    const removePromise = deleteDoc(doc(db, `company/${companyId}/${collectionName}`, id));
 
     return toast.promise(removePromise, {
       loading: `Deleting ${entityName || 'item'}...`,
@@ -124,36 +156,42 @@ export function useFirestore<T>(collectionName: string) {
     operationName?: string,
     maxRetries: number = 3
   ) => {
+    if (!user) {
+      const errorMsg = 'User not authenticated';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
+    }
+    const companyId = user.uid;
     const transactionPromise = async () => {
       let lastError: Error | null = null;
-      
+
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
           const result = await runTransaction(db, async (transaction) => {
             const results: string[] = [];
-            
+
             // Phase 1: Handle all reads first (Firestore requirement)
             const readOperations = operations.filter(op => op.type === 'read');
             for (const op of readOperations) {
               if (op.id && op.readCallback) {
-                const docRef = doc(db, collectionName, op.id);
+                const docRef = doc(db, `company/${companyId}/${collectionName}`, op.id);
                 const docSnapshot = await transaction.get(docRef);
                 op.readCallback(docSnapshot);
               }
             }
-            
+
             // Phase 2: Handle all writes
             const writeOperations = operations.filter(op => op.type !== 'read');
             for (const op of writeOperations) {
               const docRef = op.id
-                ? doc(db, collectionName, op.id)
-                : doc(collection(db, collectionName));
+                ? doc(db, `company/${companyId}/${collectionName}`, op.id)
+                : doc(collection(db, `company/${companyId}/${collectionName}`));
 
               switch (op.type) {
                 case 'add':
                   transaction.set(docRef, {
                     ...op.data,
-              
+
                   });
                   results.push(docRef.id);
                   break;
@@ -167,22 +205,22 @@ export function useFirestore<T>(collectionName: string) {
                   break;
               }
             }
-            
+
             return results;
           });
-          
+
           return result;
         } catch (error) {
           lastError = error as Error;
           console.warn(`Transaction attempt ${attempt + 1} failed:`, error);
-          
+
           // Wait before retry (exponential backoff)
           if (attempt < maxRetries - 1) {
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
           }
         }
       }
-      
+
       throw lastError || new Error('Transaction failed after all retries');
     };
 
@@ -207,11 +245,18 @@ export function useFirestore<T>(collectionName: string) {
       maxRetries?: number;
     } = {}
   ) => {
-    const { 
-      chunkSize = 500, 
-      useTransaction = false, 
-      maxRetries = 3 
+    const {
+      chunkSize = 500,
+      useTransaction = false,
+      maxRetries = 3
     } = options;
+
+    if (!user) {
+      const errorMsg = 'User not authenticated';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
+    }
+    const companyId = user.uid;
 
     // If using transaction and operations are within limit, use transaction
     if (useTransaction && operations.length <= 500) {
@@ -244,14 +289,14 @@ export function useFirestore<T>(collectionName: string) {
 
             chunk.forEach(op => {
               const docRef = op.id
-                ? doc(db, collectionName, op.id)
-                : doc(collection(db, collectionName));
+                ? doc(db, `company/${companyId}/${collectionName}`, op.id)
+                : doc(collection(db, `company/${companyId}/${collectionName}`));
 
               switch (op.type) {
                 case 'add':
                   batch.set(docRef, {
                     ...op.data,
-                    
+
                   });
                   results.push(docRef.id);
                   break;
@@ -303,10 +348,10 @@ export function useFirestore<T>(collectionName: string) {
       return Promise.reject(new Error('Atomic operations cannot exceed 500 items. Use regular batchWrite for larger operations.'));
     }
 
-    return batchWrite(operations, operationName, { 
-      useTransaction: true, 
+    return batchWrite(operations, operationName, {
+      useTransaction: true,
       chunkSize: 500,
-      maxRetries: 3 
+      maxRetries: 3
     });
   };
 
@@ -377,11 +422,11 @@ export function useContacts() {
       atomic?: boolean;
     } = {}
   ) => {
-    const { 
-      onProgress, 
-      useTransaction = false, 
+    const {
+      onProgress,
+      useTransaction = false,
       chunkSize = 100,
-      atomic = false 
+      atomic = false
     } = options;
 
     const importPromise = (async () => {
@@ -396,8 +441,8 @@ export function useContacts() {
         const allOperations = [
           ...actions.willCreate.map(contact => ({
             type: 'add' as const,
-            data: { 
-              ...contact, 
+            data: {
+              ...contact,
             }
           })),
           ...actions.willMerge.map(({ contact, existing }) => {
@@ -432,15 +477,15 @@ export function useContacts() {
           const chunk = actions.willCreate.slice(i, i + chunkSize);
           const operations = chunk.map(contact => ({
             type: 'add' as const,
-            data: { 
-              ...contact, 
+            data: {
+              ...contact,
             }
           }));
 
           try {
             await baseHook.batchWrite(
-              operations, 
-              `Contacts batch ${Math.floor(i/chunkSize) + 1}`,
+              operations,
+              `Contacts batch ${Math.floor(i / chunkSize) + 1}`,
               { useTransaction, chunkSize: 500 }
             );
             created += chunk.length;
@@ -472,8 +517,8 @@ export function useContacts() {
 
           try {
             await baseHook.batchWrite(
-              operations, 
-              `Merge batch ${Math.floor(i/chunkSize) + 1}`,
+              operations,
+              `Merge batch ${Math.floor(i / chunkSize) + 1}`,
               { useTransaction, chunkSize: 500 }
             );
             updated += chunk.length;
@@ -486,10 +531,10 @@ export function useContacts() {
       }
 
       onProgress?.(100, 'Import complete!');
-      return { 
-        created, 
-        updated, 
-        skipped, 
+      return {
+        created,
+        updated,
+        skipped,
         errors,
         totalOperations
       };
@@ -508,15 +553,15 @@ export function useContacts() {
     onProgress?: (percent: number, phase: string) => void
   ) => {
     const totalOperations = actions.willCreate.length + actions.willMerge.length;
-    
+
     if (totalOperations > 500) {
       return Promise.reject(new Error(`Atomic import cannot exceed 500 operations. Current: ${totalOperations}. Use regular import for larger datasets.`));
     }
 
-    return importContacts(actions, { 
-      onProgress, 
-      atomic: true, 
-      useTransaction: true 
+    return importContacts(actions, {
+      onProgress,
+      atomic: true,
+      useTransaction: true
     });
   };
 
@@ -530,9 +575,15 @@ export function useContacts() {
 
 export function useUsers() {
   const result = useFirestore<User>('users');
-
+  const { user } = useAuth()
+  if (!user?.uid) {
+    const errorMsg = 'User not authenticated';
+    toast.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+  const companyId = user?.uid;
   const createUser = async (userData: Omit<User, 'id'>) => {
-    const unique = await isEmailUnique(userData.email);
+    const unique = await isEmailUnique(userData.email, companyId);
     if (!unique) {
       toast.error('User with this email already exists');
       throw new Error('User with this email already exists');
@@ -548,10 +599,11 @@ export function useUsers() {
     return result.remove(userId, userName);
   };
 
-  async function isEmailUnique(email: string) {
-    const q = query(collection(db, 'users'), where('email', '==', email.toLowerCase()));
+  const isEmailUnique = async (email: string, companyId: string) => {
+
+    const q = query(collection(db, `company/${companyId}/users`), where('email', '==', email.toLowerCase()));
     const snapshot = await getDocs(q);
-    return snapshot.empty; // true if no existing users with this email
+    return snapshot.empty; 
   }
 
   return {
@@ -589,7 +641,7 @@ export function useContactFields() {
 
   const createCustomField = (fieldData: Omit<ContactField, 'id'>) => {
     const fieldId = fieldData.label.toLowerCase().replace(/\s+/g, '_');
-    
+
     const existingField = result.data.find(field => field.id === fieldId);
     if (existingField) {
       toast.error(`Field "${fieldData.label}" already exists`);

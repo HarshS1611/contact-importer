@@ -49,7 +49,7 @@ export function ImportPreview({
   const { data: contactFields } = useContactFields()
 
   useEffect(() => {
-    if (fileData && mappings && users.length > 0 && contactFields.length > 0 && existingContacts.length >= 0) {
+    if (fileData && mappings && contactFields.length > 0 && existingContacts.length >= 0) {
       runAnalysisProcess()
     }
     // eslint-disable-next-line
