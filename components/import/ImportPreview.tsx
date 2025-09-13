@@ -180,7 +180,7 @@ export function ImportPreview({
 
             <div className="flex justify-center bg-[url('/images/import/upload/processing.svg')] bg-center bg-cover bg-no-repeat rounded-full w-100 h-60 mx-auto">
               <Image
-                src="/images/import/map/finalChecks.svg"
+                src="/images/import/map/FinalChecks.svg"
                 alt="sparkle"
                 width={160}
                 height={160}
